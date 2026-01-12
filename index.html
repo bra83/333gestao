@@ -69,7 +69,7 @@
       }
       @keyframes spin { to { transform: rotate(360deg); } }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -90,13 +90,27 @@
       </div>
     </div>
     
-    <!-- Entry Point for Vite (Relative path is crucial for GitHub Pages) -->
+    <!-- Entry Point for Vite -->
     <script type="module" src="./index.tsx"></script>
     
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW falhou:', err));
+          navigator.serviceWorker.register('./sw.js').then(reg => {
+            // Check for updates logic
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    // New content is available; force refresh.
+                    console.log('Nova versão disponível. Atualizando...');
+                    window.location.reload();
+                  }
+                }
+              };
+            };
+          }).catch(err => console.log('SW falhou:', err));
         });
       }
     </script>
