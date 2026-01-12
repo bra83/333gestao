@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v9'; // Atualizado para v9
+const CACHE_NAME = '3d-erp-v10'; // Atualizado para v10
 const urlsToCache = [
   './',
   './index.html',
@@ -9,7 +9,6 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-  // Força o novo Service Worker a assumir imediatamente
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -18,7 +17,6 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  // Limpa caches antigos
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -30,7 +28,6 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  // Reivindica o controle das páginas imediatamente
   return self.clients.claim();
 });
 
