@@ -28,7 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // LEITURA (GET) - Versão Blindada e Corrigida Decimal
+  // LEITURA (GET) - Versão Blindada v9
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -46,9 +46,8 @@ const App: React.FC = () => {
       
       if (settingsRes.ok) {
          const settingsJson = await settingsRes.json();
-         // SANITIZAÇÃO CRÍTICA DE SETTINGS
-         // Garante que divisores nunca sejam zero para evitar números infinitos
          loadedSettings = { ...DEFAULT_SETTINGS, ...settingsJson };
+         // Sanitização de settings para evitar Infinity na calculadora
          if (loadedSettings.vidaUtilHoras < 100) loadedSettings.vidaUtilHoras = 8000;
          if (loadedSettings.horasTrab < 1) loadedSettings.horasTrab = 160;
          if (loadedSettings.eficienciaFonte <= 0) loadedSettings.eficienciaFonte = 0.9;
@@ -61,31 +60,34 @@ const App: React.FC = () => {
       
       const dataJson = await dataRes.json();
 
-      // Função Auxiliar INTELIGENTE para tratamento de números
+      // Função Auxiliar: Sanitização Agressiva de Números
       const fixItem = (item: any, prefix: string, idx: number) => {
          const id = (item.id && String(item.id).trim() !== "") 
             ? String(item.id) 
             : `${prefix}-${ts}-${idx}`;
 
          const safeNum = (val: any) => {
-            if (typeof val === 'number') return isFinite(val) ? val : 0;
-            if (!val) return 0;
+            if (val === undefined || val === null) return 0;
             
-            let str = String(val).trim();
-            // Remove R$, espaços e caracteres não numéricos (exceto ponto, vírgula e menos)
-            str = str.replace(/[^\d.,-]/g, '');
-
-            // Lógica de Detecção de Formato
-            // Se tiver vírgula, assume que é formato BR (ex: "1.200,50" ou "50,00")
-            if (str.includes(',')) {
-               str = str.replace(/\./g, '').replace(',', '.');
+            let num = 0;
+            if (typeof val === 'number') {
+              num = val;
+            } else {
+              // Tenta limpar string
+              let str = String(val).trim().replace(/[^\d.,-]/g, '');
+              // Se formato BR (vírgula decimal), inverte para formato JS
+              if (str.includes(',') && !str.includes('e')) {
+                 str = str.replace(/\./g, '').replace(',', '.');
+              }
+              num = parseFloat(str);
             }
-            // Se NÃO tiver vírgula, mas tiver ponto (ex: "119.90"), assume que já é float internacional.
-            
-            const num = parseFloat(str);
-            // Proteção contra números absurdos (Infinity ou > 1 trilhão)
-            if (!isFinite(num) || Math.abs(num) > 1000000000000) return 0; 
-            return isNaN(num) ? 0 : num;
+
+            // CHECK FINAL: Se não é número finito OU se é absurdamente grande (> 1 milhão)
+            // Isso mata o bug dos quadrilhões
+            if (!isFinite(num) || isNaN(num) || Math.abs(num) > 1000000) {
+              return 0; 
+            }
+            return num;
          };
 
          return {
@@ -160,7 +162,7 @@ const App: React.FC = () => {
     await apiCall({ type, action: 'delete', id: cleanId });
   };
 
-  // --- ESTOQUE ---
+  // --- HANDLERS (Igual ao anterior) ---
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
     const id = "ST" + Date.now();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
@@ -184,7 +186,6 @@ const App: React.FC = () => {
     showToast('Removido!');
   };
 
-  // --- VENDAS ---
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
     const id = "VE" + Date.now();
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
@@ -212,7 +213,6 @@ const App: React.FC = () => {
     showToast('Venda apagada!');
   };
 
-  // --- GASTOS ---
   const handleAddExpense = async (descricao: string, valor: number, dataStr: string) => {
     const id = "GA" + Date.now();
     const newExpense = { id, descricao, valor, data: dataStr };
