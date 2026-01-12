@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v8'; // Atualizado para v8
+const CACHE_NAME = '3d-erp-v9'; // Atualizado para v9
 const urlsToCache = [
   './',
   './index.html',
