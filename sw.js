@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v9.0-saneamento-total';
+const CACHE_NAME = '3d-erp-v11.0-comma-corrector';
 const assets = [
   './',
   './index.html',
