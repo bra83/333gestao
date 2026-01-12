@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v32-formdata';
+const CACHE_NAME = '3d-erp-v33-maintenance';
 const assets = [
   './',
   './index.html',
