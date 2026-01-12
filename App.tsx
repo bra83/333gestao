@@ -42,10 +42,17 @@ const App: React.FC = () => {
       const ts = new Date().getTime();
       // Busca Configurações
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
+      let loadedSettings = { ...DEFAULT_SETTINGS };
+      
       if (settingsRes.ok) {
          const settingsJson = await settingsRes.json();
-         // Mescla com defaults para evitar quebras se vier vazio
-         setSettings({ ...DEFAULT_SETTINGS, ...settingsJson });
+         // SANITIZAÇÃO CRÍTICA DE SETTINGS
+         // Garante que divisores nunca sejam zero para evitar números infinitos
+         loadedSettings = { ...DEFAULT_SETTINGS, ...settingsJson };
+         if (loadedSettings.vidaUtilHoras < 100) loadedSettings.vidaUtilHoras = 8000;
+         if (loadedSettings.horasTrab < 1) loadedSettings.horasTrab = 160;
+         if (loadedSettings.eficienciaFonte <= 0) loadedSettings.eficienciaFonte = 0.9;
+         setSettings(loadedSettings);
       }
 
       // Busca Dados
@@ -61,10 +68,12 @@ const App: React.FC = () => {
             : `${prefix}-${ts}-${idx}`;
 
          const safeNum = (val: any) => {
-            if (typeof val === 'number') return val;
+            if (typeof val === 'number') return isFinite(val) ? val : 0;
             if (!val) return 0;
             
             let str = String(val).trim();
+            // Remove R$, espaços e caracteres não numéricos (exceto ponto, vírgula e menos)
+            str = str.replace(/[^\d.,-]/g, '');
 
             // Lógica de Detecção de Formato
             // Se tiver vírgula, assume que é formato BR (ex: "1.200,50" ou "50,00")
@@ -72,9 +81,10 @@ const App: React.FC = () => {
                str = str.replace(/\./g, '').replace(',', '.');
             }
             // Se NÃO tiver vírgula, mas tiver ponto (ex: "119.90"), assume que já é float internacional.
-            // NÃO removemos o ponto nesse caso, senão vira 11990!
             
             const num = parseFloat(str);
+            // Proteção contra números absurdos (Infinity ou > 1 trilhão)
+            if (!isFinite(num) || Math.abs(num) > 1000000000000) return 0; 
             return isNaN(num) ? 0 : num;
          };
 
@@ -141,7 +151,7 @@ const App: React.FC = () => {
   };
 
   const handleMaintenance = async () => {
-    fetchData(); // Apenas recarrega (o backend v8 já faz o reparo na leitura)
+    fetchData(); 
   };
 
   const executeDelete = async (type: string, id: string) => {
@@ -259,7 +269,7 @@ const App: React.FC = () => {
 
       <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe z-30 shadow-sm">
         <div className="flex justify-around max-w-lg mx-auto pt-1">
-          <NavButton v={ViewState.DASHBOARD} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>} label="Início" />
+          <NavButton v={ViewState.DASHBOARD} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>} label="Início" />
           <NavButton v={ViewState.CALCULATOR} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>} label="Calc" />
           <NavButton v={ViewState.INVENTORY} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8l-7-4-7 4v8l7 4z"/></svg>} label="Estoque" />
           <NavButton v={ViewState.TRANSACTIONS} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>} label="Finanças" />
