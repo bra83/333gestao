@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v8.0-decimal-fix';
+const CACHE_NAME = '3d-erp-v9.0-saneamento-total';
 const assets = [
   './',
   './index.html',
