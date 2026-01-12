@@ -26,113 +26,63 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, ap
   return (
     <div className="space-y-6 pb-20">
       
-      {/* --- Connection --- */}
-      <div className={`bg-white p-5 rounded-2xl border ${lastError ? 'border-red-200 shadow-red-50' : 'border-green-200 shadow-green-50'} shadow-sm`}>
-        <div className="flex justify-between items-center mb-3">
-          <label className="text-slate-500 text-xs font-bold uppercase tracking-wide">
-            Integração Google Sheets
+      <div className={`retro-box p-4 bg-white ${lastError ? 'border-heart' : 'border-primary'}`}>
+        <div className="flex justify-between items-center mb-2">
+          <label className="text-secondary text-xs font-pixel uppercase">
+            Server Link (Google Sheet)
           </label>
-          {lastError ? (
-            <span className="text-xs bg-red-100 text-red-500 px-3 py-1 rounded-full font-bold">Desconectado</span>
-          ) : (
-            <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-full font-bold">Conectado</span>
-          )}
+          <span className={`text-[10px] font-pixel uppercase px-2 py-0.5 border-2 ${lastError ? 'bg-heart text-white border-bgDark' : 'bg-primary text-white border-bgDark'}`}>
+            {lastError ? 'Disconnected' : 'Online'}
+          </span>
         </div>
         
         <input 
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-600 text-xs mb-3 font-mono" 
+          className="w-full bg-[#f0f0f0] border-2 border-[#ccc] p-2 text-xs mb-3 font-mono focus:border-secondary focus:outline-none" 
           value={apiUrl} 
           onChange={handleUrlChange}
-          placeholder="https://script.google.com/macros/s/.../exec"
+          placeholder="https://..."
         />
         
-        {lastError && (
-          <div className="bg-red-50 p-3 rounded-xl text-xs text-red-500 mb-3 border border-red-100">
-            {lastError}
-          </div>
-        )}
-
         <div className="flex gap-2">
-            {onRetry && (
-            <button 
-                onClick={onRetry}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs py-3 rounded-xl font-bold transition-colors"
-            >
-                Sincronizar
-            </button>
-            )}
-            {onMaintenance && (
-             <button 
-                onClick={onMaintenance}
-                className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-600 text-xs py-3 rounded-xl font-bold transition-colors border border-orange-200"
-                title="Use se os dados estiverem bagunçados"
-            >
-                Reparar Planilha
-            </button>
-            )}
+            {onRetry && <button onClick={onRetry} className="retro-btn flex-1 bg-secondary text-white text-xs py-2 font-pixel uppercase border border-bgDark">Sync</button>}
+            {onMaintenance && <button onClick={onMaintenance} className="retro-btn flex-1 bg-accent text-bgDark text-xs py-2 font-pixel uppercase border border-bgDark">Repair</button>}
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-emerald-100">
-        <h3 className="text-slate-700 font-bold mb-6 border-b border-emerald-50 pb-3 text-lg">Configuração</h3>
+      <div className="retro-box p-5 bg-white">
+        <h3 className="text-secondary font-pixel text-xl uppercase mb-6 border-b-4 border-secondary pb-2">Game Options</h3>
         
         <div className="space-y-8">
-          
-          <Section title="1. Máquina & Energia">
+          <Section title="Machine Stats">
              <div className="grid grid-cols-2 gap-3">
-               <Input label="Preço Máquina (R$)" val={formData.precoMaq} onChange={v => handleChange('precoMaq', v)} />
-               <Input label="Vida Útil (Horas Reais)" val={formData.vidaUtilHoras || 8000} onChange={v => handleChange('vidaUtilHoras', v)} />
-               <Input label="Manutenção Mensal (R$)" val={formData.manutencaoMensal || 20} onChange={v => handleChange('manutencaoMensal', v)} />
-               <Input label="Potência Média (Watts)" val={formData.potencia} onChange={v => handleChange('potencia', v)} />
-               <Input label="Custo kWh (R$)" val={formData.kwh} step={0.01} onChange={v => handleChange('kwh', v)} />
-               <Input label="Eficiência Fonte (0-1)" val={formData.eficienciaFonte || 0.9} step={0.01} onChange={v => handleChange('eficienciaFonte', v)} />
+               <Input label="Cost (R$)" val={formData.precoMaq} onChange={v => handleChange('precoMaq', v)} />
+               <Input label="HP (Hours)" val={formData.vidaUtilHoras || 8000} onChange={v => handleChange('vidaUtilHoras', v)} />
+               <Input label="Repair/Mo" val={formData.manutencaoMensal || 20} onChange={v => handleChange('manutencaoMensal', v)} />
+               <Input label="Power (W)" val={formData.potencia} onChange={v => handleChange('potencia', v)} />
+               <Input label="Energy (kWh)" val={formData.kwh} step={0.01} onChange={v => handleChange('kwh', v)} />
              </div>
           </Section>
 
-          <Section title="2. Empresa & Custos Fixos">
+          <Section title="Guild Costs">
              <div className="col-span-2 mb-2">
-                <Input label="Horas Trabalhadas/Mês" val={formData.horasTrab} onChange={v => handleChange('horasTrab', v)} />
+                <Input label="Work Hours/Mo" val={formData.horasTrab} onChange={v => handleChange('horasTrab', v)} />
              </div>
              <div className="grid grid-cols-3 gap-2">
-               <Input label="MEI" val={formData.mei} onChange={v => handleChange('mei', v)} />
-               <Input label="Aluguel" val={formData.aluguel} onChange={v => handleChange('aluguel', v)} />
-               <Input label="Software" val={formData.softwares} onChange={v => handleChange('softwares', v)} />
-               <Input label="Loja" val={formData.ecommerce} onChange={v => handleChange('ecommerce', v)} />
-               <Input label="Ads" val={formData.publicidade} onChange={v => handleChange('publicidade', v)} />
-               <Input label="Outros" val={formData.condominio} onChange={v => handleChange('condominio', v)} />
+               <Input label="Tax" val={formData.mei} onChange={v => handleChange('mei', v)} />
+               <Input label="Rent" val={formData.aluguel} onChange={v => handleChange('aluguel', v)} />
+               <Input label="Tools" val={formData.softwares} onChange={v => handleChange('softwares', v)} />
              </div>
           </Section>
 
-          <Section title="3. Mão de Obra & Processos">
+          <Section title="Labor & Skills">
              <div className="grid grid-cols-2 gap-3">
-               <Input label="Valor da sua Hora (R$)" val={formData.valorHoraTrabalho || 25} onChange={v => handleChange('valorHoraTrabalho', v)} />
-               <Input label="Tempo Prep. Padrão (min)" val={formData.tempoPreparacao || 15} onChange={v => handleChange('tempoPreparacao', v)} />
-               <Input label="Tempo Pós Padrão (min)" val={formData.tempoPosProcessamento || 15} onChange={v => handleChange('tempoPosProcessamento', v)} />
-               <Input label="Atendimento (min)" val={formData.tempoAtendimento || 10} onChange={v => handleChange('tempoAtendimento', v)} />
+               <Input label="Hourly Rate" val={formData.valorHoraTrabalho || 25} onChange={v => handleChange('valorHoraTrabalho', v)} />
+               <Input label="Prep Time" val={formData.tempoPreparacao || 15} onChange={v => handleChange('tempoPreparacao', v)} />
              </div>
           </Section>
 
-          <Section title="4. Serviços & Materiais">
-             <div className="grid grid-cols-2 gap-3">
-               <Input label="Perda Material (%)" val={formData.perdaMaterial || 5} onChange={v => handleChange('perdaMaterial', v)} />
-               <Input label="Custo Embalagem (R$)" val={formData.embalagem} onChange={v => handleChange('embalagem', v)} />
-             </div>
-             <div className="grid grid-cols-3 gap-2 mt-2">
-                <Input label="Pint. Simp" val={formData.pintSimples} onChange={v => handleChange('pintSimples', v)} />
-                <Input label="Pint. Méd" val={formData.pintMedia} onChange={v => handleChange('pintMedia', v)} />
-                <Input label="Pint. Prof" val={formData.pintProf} onChange={v => handleChange('pintProf', v)} />
-             </div>
-          </Section>
-
-          <Section title="5. Estratégia">
-             <div className="grid grid-cols-2 gap-3">
-               <Input label="Markup (Multiplicador)" val={formData.markup} step={0.1} onChange={v => handleChange('markup', v)} />
-               <Input label="Risco / Margem Erro (%)" val={formData.risco || 10} onChange={v => handleChange('risco', v)} />
-             </div>
-          </Section>
-
-          <button onClick={() => onSave(formData)} className="w-full bg-primary hover:bg-emerald-700 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-200 mt-4 text-sm uppercase tracking-wide transition-transform active:scale-95">
-            Salvar Tudo
+          <button onClick={() => onSave(formData)} className="retro-btn w-full bg-primary text-white font-pixel uppercase py-4 border-2 border-bgDark shadow-[4px_4px_0_#000] text-lg hover:bg-[#00b352]">
+            Save Game
           </button>
         </div>
       </div>
@@ -141,21 +91,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, ap
 };
 
 const Section = ({ title, children }: { title: string, children?: React.ReactNode }) => (
-  <div className="border-b border-emerald-50 pb-6 last:border-0 last:pb-0">
-    <h4 className="text-primary text-xs font-black uppercase tracking-wider mb-4">{title}</h4>
+  <div className="border-b-2 border-secondary/20 pb-6 last:border-0 last:pb-0">
+    <h4 className="text-secondary text-xs font-pixel uppercase mb-4 bg-[#fcf9ee] inline-block px-2 border border-secondary">{title}</h4>
     {children}
   </div>
 );
 
 const Input = ({ label, val, onChange, step }: { label: string, val: number, onChange: (v: string) => void, step?: number }) => (
   <div>
-    <label className="text-slate-400 text-[10px] font-bold block mb-1 truncate uppercase">{label}</label>
+    <label className="text-secondary/70 text-[10px] font-bold block mb-1 uppercase">{label}</label>
     <input 
-      type="number" 
-      step={step}
-      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 text-sm font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all" 
-      value={val} 
-      onChange={e => onChange(e.target.value)} 
+      type="number" step={step}
+      className="w-full bg-[#f9f9f9] border-2 border-secondary/30 p-2 text-bgDark text-sm font-bold focus:border-primary focus:bg-white focus:outline-none" 
+      value={val} onChange={e => onChange(e.target.value)} 
     />
   </div>
 );
