@@ -39,13 +39,11 @@ const App: React.FC = () => {
     try {
       const ts = new Date().getTime();
       
-      // READ_SETTINGS
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
       if (!settingsRes.ok) throw new Error(`HTTP Error: ${settingsRes.status}`);
       const settingsJson = await settingsRes.json();
       setSettings(settingsJson);
 
-      // READ_DATA
       const dataRes = await fetch(`${targetUrl}?type=read_data&t=${ts}`);
       if (!dataRes.ok) throw new Error(`HTTP Error: ${dataRes.status}`);
       const dataJson = await dataRes.json();
@@ -71,7 +69,7 @@ const App: React.FC = () => {
       console.error('API Error:', err);
       setLastError('Erro de conexão. Verifique o Apps Script.');
       showToast('Modo Offline');
-      if (data.estoque.length === 0) setData(MOCK_DATA); // Fallback apenas se vazio
+      if (data.estoque.length === 0) setData(MOCK_DATA);
     } finally {
       setLoading(false);
     }
@@ -81,16 +79,17 @@ const App: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // Função genérica de API
   const apiCall = async (params: URLSearchParams) => {
     if(!apiUrl) return;
     try {
+      // Usamos GET para evitar problemas de CORS em redirecionamentos do Apps Script
+      // e garantir que o comando chegue com todos os parâmetros na URL
       await fetch(`${apiUrl}?${params.toString()}`, { 
-        method: 'POST', 
+        method: 'GET',
         mode: 'no-cors'
       });
     } catch(e) {
-      console.error("API POST Error", e);
+      console.error("API Error", e);
     }
   };
 
@@ -108,10 +107,8 @@ const App: React.FC = () => {
 
   // --- ESTOQUE ---
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
-    const id = Date.now().toString();
+    const id = "ST" + Date.now();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
-    
-    // Atualiza localmente
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
     
     const params = new URLSearchParams({ 
@@ -119,62 +116,55 @@ const App: React.FC = () => {
       peso: peso.toString(), preco: preco.toString(), cor, tipo
     });
     apiCall(params);
-    showToast('Filamento adicionado!');
+    showToast('Adicionado!');
   };
 
   const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
-    // Atualiza localmente com fusão
     setData(prev => ({
       ...prev,
       estoque: prev.estoque.map(item => item.id === id ? { ...item, ...updates } : item)
     }));
     
-    // Pega o item atualizado do estado (ou simula a fusão para enviar)
     const currentItem = data.estoque.find(i => i.id === id);
     if (!currentItem) return;
     const finalItem = { ...currentItem, ...updates };
 
     const params = new URLSearchParams({
       type: 'estoque', action: 'update', id,
-      nome: finalItem.nome || '', marca: finalItem.marca || '',
-      peso: (finalItem.peso || 0).toString(), preco: (finalItem.preco || 0).toString(),
-      cor: finalItem.cor || '', tipo: finalItem.tipo || ''
+      nome: finalItem.nome, marca: finalItem.marca || "",
+      peso: finalItem.peso.toString(), preco: finalItem.preco.toString(),
+      cor: finalItem.cor || "", tipo: finalItem.tipo || ""
     });
     apiCall(params);
-    showToast('Estoque atualizado!');
   };
 
   const handleDeleteStock = async (id: string) => {
-    if (!window.confirm("Apagar este carretel?")) return;
+    if (!window.confirm("Apagar este carretel permanentemente?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
-    apiCall(new URLSearchParams({ type: 'estoque', action: 'delete', id }));
+    // Para deleção, enviamos apenas o ID e o comando, garantindo que o script não tente preencher outras colunas
+    const params = new URLSearchParams({ type: 'estoque', action: 'delete', id });
+    apiCall(params);
     showToast('Removido!');
   };
 
   // --- VENDAS ---
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
-    const id = Date.now().toString();
+    const id = "VE" + Date.now();
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
     
-    // 1. Adiciona Venda Local
     setData(prev => ({ ...prev, vendas: [newSale, ...prev.vendas] }));
     
-    // 2. Desconta Estoque (Local + Remoto)
     if (stockId) {
        const stockItem = data.estoque.find(s => s.id === stockId);
        if (stockItem) {
           const newWeight = Math.max(0, stockItem.peso - peso);
           handleUpdateStock(stockId, { peso: newWeight });
-          showToast(`Estoque descontado: -${peso}g`);
-       } else {
-         console.warn("Stock Item ID not found:", stockId);
        }
     }
 
-    // 3. Envia Venda
     const params = new URLSearchParams({ 
       type: 'venda', action: 'create', id, item, material, peso: peso.toString(),
-      venda: venda.toFixed(2), lucro: lucro.toFixed(2) 
+      venda: venda.toFixed(2), lucro: lucro.toFixed(2), data: newSale.data
     });
     apiCall(params);
     
@@ -183,34 +173,31 @@ const App: React.FC = () => {
   };
 
   const handleUpdateSale = async (id: string, newVal: number, newProfit: number) => {
+    const sale = data.vendas.find(s => s.id === id);
+    if (!sale) return;
+
     setData(prev => ({
       ...prev,
       vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: newVal, lucro: newProfit } : s)
     }));
     
-    const sale = data.vendas.find(s => s.id === id);
-    if (sale) {
-       const params = new URLSearchParams({ 
-        type: 'venda', action: 'update', id, data: sale.data, item: sale.item, 
-        material: sale.material, peso: sale.peso.toString(),
-        venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) 
-      });
-      apiCall(params);
-    }
-    showToast('Venda atualizada!');
+    const params = new URLSearchParams({ 
+      type: 'venda', action: 'update', id, data: sale.data, item: sale.item, 
+      material: sale.material, peso: sale.peso.toString(),
+      venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) 
+    });
+    apiCall(params);
   };
 
   const handleDeleteSale = async (id: string) => {
-    // Remove local
     setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
-    // Envia comando
     apiCall(new URLSearchParams({ type: 'venda', action: 'delete', id }));
     showToast('Venda apagada!');
   };
 
   // --- GASTOS ---
   const handleAddExpense = async (descricao: string, valor: number, dataStr: string) => {
-    const id = Date.now().toString();
+    const id = "GA" + Date.now();
     const newExpense: Expense = { id, descricao, valor, data: dataStr };
     
     setData(prev => ({ ...prev, gastos: [newExpense, ...prev.gastos] }));
@@ -223,23 +210,23 @@ const App: React.FC = () => {
   };
 
   const handleUpdateExpense = async (id: string, descricao: string, valor: number) => {
+    const exp = data.gastos.find(g => g.id === id);
+    if (!exp) return;
+
     setData(prev => ({
       ...prev,
       gastos: prev.gastos.map(g => g.id === id ? { ...g, descricao, valor } : g)
     }));
     
-    const exp = data.gastos.find(g => g.id === id);
-    if (exp) {
-      const params = new URLSearchParams({
-        type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString()
-      });
-      apiCall(params);
-    }
-    showToast('Gasto atualizado!');
+    const params = new URLSearchParams({
+      type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString()
+    });
+    apiCall(params);
   };
 
   const handleDeleteExpense = async (id: string) => {
     setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
+    // Garante que o ID enviado seja o único parâmetro para evitar confusão no Sheets
     apiCall(new URLSearchParams({ type: 'gasto', action: 'delete', id }));
     showToast('Gasto removido!');
   };
@@ -249,7 +236,7 @@ const App: React.FC = () => {
     localStorage.setItem('APPS_SCRIPT_URL', val);
   };
 
-  // Navigation Icons
+  // Ícones simplificados para navegação
   const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
   const IconCalc = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>;
   const IconBox = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
@@ -268,10 +255,8 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-dark text-slate-600 font-sans selection:bg-primary selection:text-white">
-      {/* Header */}
       <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-emerald-100 p-4 z-20 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
-          {/* LOGO 333 */}
           <div className="flex items-center -space-x-1.5 select-none">
             <span className="text-4xl font-black text-primary tracking-tighter">3</span>
             <span className="text-4xl font-black text-emerald-300 tracking-tighter z-10">3</span>
@@ -281,7 +266,6 @@ const App: React.FC = () => {
         {loading && <div className="w-5 h-5 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>}
       </header>
 
-      {/* Main Content */}
       <main className="p-4 max-w-lg mx-auto">
         {view === ViewState.DASHBOARD && <DashboardView data={data} onNavigate={setView} />}
         {view === ViewState.CALCULATOR && (
@@ -322,7 +306,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
         <div className="flex justify-around max-w-lg mx-auto pt-1">
           <NavButton v={ViewState.DASHBOARD} icon={IconHome} label="Início" />
@@ -333,7 +316,6 @@ const App: React.FC = () => {
         </div>
       </nav>
       
-      {/* Toast */}
       {toast && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white text-slate-700 px-6 py-3 rounded-full shadow-xl text-sm border border-emerald-100 z-50 animate-bounce font-bold flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-primary"></span>
