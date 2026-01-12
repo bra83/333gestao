@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v11.0-comma-corrector';
+const CACHE_NAME = '3d-erp-v12.0-ui-upgrade';
 const assets = [
   './',
   './index.html',
