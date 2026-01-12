@@ -28,7 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // LEITURA (GET)
+  // LEITURA (GET) - Versão Blindada
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -40,36 +40,63 @@ const App: React.FC = () => {
     setLoading(true);
     try {
       const ts = new Date().getTime();
+      // Busca Configurações
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
-      const settingsJson = await settingsRes.json();
-      setSettings(settingsJson);
+      if (settingsRes.ok) {
+         const settingsJson = await settingsRes.json();
+         // Mescla com defaults para evitar quebras se vier vazio
+         setSettings({ ...DEFAULT_SETTINGS, ...settingsJson });
+      }
 
+      // Busca Dados
       const dataRes = await fetch(`${targetUrl}?type=read_data&t=${ts}`);
+      if (!dataRes.ok) throw new Error("Erro na resposta do Google");
+      
       const dataJson = await dataRes.json();
 
-      const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({
-        ...item,
-        // Se o ID vier vazio ou não for string, gera um provisório. 
-        // Importante: O script backend agora garante IDs reais, então isso deve diminuir.
-        id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `${prefix}-${ts}-${i}`,
-        peso: Number(item.peso)||0,
-        preco: Number(item.preco)||0,
-        venda: Number(item.venda)||0,
-        lucro: Number(item.lucro)||0,
-        valor: Number(item.valor)||0
-      }));
+      // Função Auxiliar para tratamento de números e IDs
+      const fixItem = (item: any, prefix: string, idx: number) => {
+         // Garante ID
+         const id = (item.id && String(item.id).trim() !== "") 
+            ? String(item.id) 
+            : `${prefix}-${ts}-${idx}`;
+
+         // Garante Números (O Backend já limpa, mas aqui é dupla segurança)
+         const safeNum = (val: any) => {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            // Se vier string "1.000,00" ainda (caso o backend falhe), tentamos limpar
+            const cleanStr = String(val).replace(/\./g, '').replace(',', '.');
+            const num = parseFloat(cleanStr);
+            return isNaN(num) ? 0 : num;
+         };
+
+         return {
+            ...item,
+            id,
+            peso: safeNum(item.peso),
+            preco: safeNum(item.preco),
+            venda: safeNum(item.venda),
+            lucro: safeNum(item.lucro),
+            valor: safeNum(item.valor)
+         };
+      };
       
+      const safeList = (list: any[]) => Array.isArray(list) ? list : [];
+
       setData({ 
-        estoque: fixId(dataJson.estoque, 'st'),
-        vendas: fixId(dataJson.vendas, 've'),
-        gastos: fixId(dataJson.gastos, 'ga')
+        estoque: safeList(dataJson.estoque).map((item, i) => fixItem(item, 'st', i)),
+        vendas: safeList(dataJson.vendas).map((item, i) => fixItem(item, 've', i)),
+        gastos: safeList(dataJson.gastos).map((item, i) => fixItem(item, 'ga', i))
       });
-      showToast('Sincronizado!');
+      
+      showToast('Dados Atualizados!');
       setLastError(null);
     } catch (err: any) {
       console.error(err);
-      setLastError('Erro de conexão.');
-      showToast('Modo Offline');
+      setLastError('Erro de conexão ou script.');
+      showToast('Modo Offline Ativado');
+      // Só usa mock data se estiver realmente vazio para não sobrescrever dados reais em caso de erro momentâneo
       if (data.estoque.length === 0) setData(MOCK_DATA);
     } finally {
       setLoading(false);
@@ -93,7 +120,7 @@ const App: React.FC = () => {
       });
     } catch(e) { 
       console.error("API Error", e);
-      showToast("Erro ao salvar nuvem (mas salvo local)");
+      showToast("Erro ao salvar nuvem (salvo local)");
     }
   };
 
@@ -107,14 +134,9 @@ const App: React.FC = () => {
     }
   };
 
-  // Função especial para consertar planilha
+  // Botão de pânico (Manutenção manual se precisar forçar sync)
   const handleMaintenance = async () => {
-    if (!window.confirm("Isso tentará corrigir as colunas e IDs da sua planilha. Continuar?")) return;
-    setLoading(true);
-    await apiCall({ type: 'maintenance' });
-    setTimeout(() => {
-        fetchData(); // Recarrega dados após manutenção
-    }, 2000);
+    fetchData(); // Apenas recarrega, pois o backend v7 faz manutenção automática na leitura
   };
 
   const executeDelete = async (type: string, id: string) => {
