@@ -482,7 +482,7 @@ const TransactionsView: React.FC<any> = ({ sales, expenses, onUpdateSale, onDele
             <div key={sale.id || idx} className="bg-white p-5 rounded-3xl border border-emerald-50 shadow-sm relative group hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-2">
                  <div><div className="text-slate-700 font-bold text-lg">{sale.item}</div><div className="text-slate-400 text-xs font-semibold">{sale.data} • {sale.material || 'N/A'} ({sale.peso || 0}g)</div></div>
-                 {editingSaleId === sale.id ? (<div className="text-right flex flex-col gap-1"><button onClick={() => saveEditSale(sale.id)} className="text-green-500 text-xs font-bold border border-green-200 bg-green-50 px-2 py-1 rounded-lg">SALVAR</button><button onClick={() => setEditingSaleId(null)} className="text-slate-400 text-xs px-2 py-1">CANCELAR</button></div>) : (<div className="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><button type="button" onClick={() => startEditSale(sale)} className="bg-slate-50 p-2 rounded-full text-blue-400 hover:bg-blue-50 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button><button type="button" onClick={(e) => window.confirm('Apagar?') && onDeleteSale(sale.id)} className="bg-slate-50 p-2 rounded-full text-red-400 hover:bg-red-50 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></div>)}
+                 {editingSaleId === sale.id ? (<div className="text-right flex flex-col gap-1"><button onClick={() => saveEditSale(sale.id)} className="text-green-500 text-xs font-bold border border-green-200 bg-green-50 px-2 py-1 rounded-lg">SALVAR</button><button onClick={() => setEditingSaleId(null)} className="text-slate-400 text-xs px-2 py-1">CANCELAR</button></div>) : (<div className="flex gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><button type="button" onClick={() => startEditSale(sale)} className="bg-slate-50 p-2 rounded-full text-blue-400 hover:bg-blue-50 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button><button type="button" onClick={(e) => handleDeleteClick(e, sale.id)} className="bg-slate-50 p-2 rounded-full text-red-400 hover:bg-red-50 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></div>)}
               </div>
               {editingSaleId === sale.id ? (<div className="flex gap-2 mt-3 bg-slate-50 p-3 rounded-xl"><div className="flex-1"><label className="text-[10px] text-slate-400 font-bold">Venda</label><input className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-700 text-sm" value={editSalePrice} onChange={e => setEditSalePrice(e.target.value)} type="number" /></div><div className="flex-1"><label className="text-[10px] text-slate-400 font-bold">Lucro</label><input className="w-full bg-white border border-slate-200 rounded-lg p-2 text-slate-700 text-sm" value={editSaleProfit} onChange={e => setEditSaleProfit(e.target.value)} type="number" /></div></div>) : (<div className="flex justify-between items-end border-t border-dashed border-slate-100 pt-3 mt-2"><div className="text-green-600 text-xs font-bold bg-green-100 px-3 py-1 rounded-full">Lucro: R$ {sale.lucro.toFixed(2)}</div><div className="text-slate-700 font-black text-xl">R$ {sale.venda.toFixed(2)}</div></div>)}
             </div>
@@ -598,7 +598,20 @@ const App: React.FC = () => {
   const handleDeleteExpense = (id:string) => { 
     if(!id) return;
     setData(prev=>({...prev, gastos:prev.gastos.filter(g=>g.id!==id)})); 
-    apiCall(new URLSearchParams({type:'gasto',action:'delete',id})); 
+    
+    // TRUQUE PARA CORRIGIR BACKEND BUGADO:
+    // Envia dados "fictícios" de deletado. 
+    // Se o backend funcionar, ele ignora e deleta.
+    // Se o backend falhar e criar, ele cria com valor 0 e texto "deleted" (evita erro #NUM!)
+    const dt = new Date().toISOString().split('T')[0];
+    apiCall(new URLSearchParams({
+        type:'gasto',
+        action:'delete',
+        id: id,
+        descricao: 'deleted',
+        valor: '0',
+        data: dt
+    })); 
     showToast('Removido!'); 
   };
 
