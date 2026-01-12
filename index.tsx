@@ -459,6 +459,13 @@ const TransactionsView: React.FC<any> = ({ sales, expenses, onUpdateSale, onDele
   const startEditExpense = (exp: Expense) => { setEditingExpId(exp.id); setEditExpDesc(exp.descricao); setEditExpVal(exp.valor.toString()); };
   const saveEditExpense = (id: string) => { onUpdateExpense(id, editExpDesc, Number(editExpVal)); setEditingExpId(null); };
 
+  // Helper para Delete
+  const handleDeleteClick = (id: string) => {
+    if (window.confirm('Apagar?')) {
+      onDeleteExpense(id);
+    }
+  };
+
   return (
     <div className="pb-20">
       <div className="flex bg-white p-1 rounded-2xl mb-6 border border-emerald-100 shadow-sm">
@@ -487,7 +494,7 @@ const TransactionsView: React.FC<any> = ({ sales, expenses, onUpdateSale, onDele
           <h3 className="text-slate-700 font-bold px-2 text-lg">Saídas</h3>
           {expenses.slice().reverse().map((exp: Expense, idx: number) => (
              <div key={exp.id || idx} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center group relative shadow-sm hover:shadow-md transition-all">
-                {editingExpId === exp.id ? (<div className="w-full flex gap-2 items-center"><div className="flex-1 space-y-1"><input className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 text-xs" value={editExpDesc} onChange={e => setEditExpDesc(e.target.value)} /><input className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 text-xs" type="number" value={editExpVal} onChange={e => setEditExpVal(e.target.value)} /></div><div className="flex flex-col gap-1"><button onClick={() => saveEditExpense(exp.id)} className="bg-green-500 text-white p-1 rounded-lg text-[10px] font-bold">OK</button><button onClick={() => setEditingExpId(null)} className="bg-slate-200 text-slate-600 p-1 rounded-lg text-[10px]">X</button></div></div>) : (<><div><div className="text-slate-700 font-bold">{exp.descricao}</div><div className="text-slate-400 text-xs font-semibold">{exp.data}</div></div><div className="text-right"><div className="text-red-400 font-black text-lg">- R$ {exp.valor.toFixed(2)}</div></div><div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity bg-white pl-2"><button onClick={() => startEditExpense(exp)} className="bg-slate-50 p-1.5 rounded-lg text-blue-400 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button><button onClick={() => window.confirm('Apagar?') && onDeleteExpense(exp.id)} className="bg-slate-50 p-1.5 rounded-lg text-red-400 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></>)}
+                {editingExpId === exp.id ? (<div className="w-full flex gap-2 items-center"><div className="flex-1 space-y-1"><input className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 text-xs" value={editExpDesc} onChange={e => setEditExpDesc(e.target.value)} /><input className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 text-xs" type="number" value={editExpVal} onChange={e => setEditExpVal(e.target.value)} /></div><div className="flex flex-col gap-1"><button onClick={() => saveEditExpense(exp.id)} className="bg-green-500 text-white p-1 rounded-lg text-[10px] font-bold">OK</button><button onClick={() => setEditingExpId(null)} className="bg-slate-200 text-slate-600 p-1 rounded-lg text-[10px]">X</button></div></div>) : (<><div><div className="text-slate-700 font-bold">{exp.descricao}</div><div className="text-slate-400 text-xs font-semibold">{exp.data}</div></div><div className="text-right"><div className="text-red-400 font-black text-lg">- R$ {exp.valor.toFixed(2)}</div></div><div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity bg-white pl-2"><button onClick={() => startEditExpense(exp)} className="bg-slate-50 p-1.5 rounded-lg text-blue-400 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button><button onClick={() => handleDeleteClick(exp.id)} className="bg-slate-50 p-1.5 rounded-lg text-red-400 border border-slate-100"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div></>)}
              </div>
           ))}
         </div>
@@ -575,6 +582,8 @@ const App: React.FC = () => {
   };
   const handleDeleteSale = (id:string) => { setData(prev=>({...prev, vendas:prev.vendas.filter(s=>s.id!==id)})); apiCall(new URLSearchParams({type:'venda',action:'delete',id})); showToast('Removido!'); };
   const handleAddExpense = (d:string,v:number,dt:string) => {
+    // PROTEÇÃO EXTRA CONTRA ITENS EM BRANCO
+    if (!d || d.trim() === '' || isNaN(v) || v === 0) return;
     const id=Date.now().toString(); setData(prev=>({...prev, gastos:[{id,descricao:d,valor:v,data:dt},...prev.gastos]}));
     apiCall(new URLSearchParams({type:'gasto',action:'create',id,data:dt,descricao:d,valor:v.toString()})); showToast('Gasto registrado!');
   };
