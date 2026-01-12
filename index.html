@@ -48,9 +48,21 @@
       }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      #error-container {
+        display: none;
+        padding: 20px;
+        background: #fee2e2;
+        color: #991b1b;
+        font-family: monospace;
+        margin: 20px;
+        border-radius: 8px;
+        border: 1px solid #f87171;
+        white-space: pre-wrap;
+      }
     </style>
 
-    <!-- IMPORT MAP: Limpo e corrigido para React 18 apenas -->
+    <!-- IMPORT MAP: Corrigido para usar APENAS React 18 -->
     <script type="importmap">
 {
   "imports": {
@@ -66,21 +78,55 @@
 }
 </script>
 
-    <!-- BABEL: Compila o React direto no navegador -->
+    <!-- Error Handler para Debug -->
+    <script>
+      window.addEventListener('error', function(e) {
+        var container = document.getElementById('error-container');
+        if(container) {
+          container.style.display = 'block';
+          container.innerHTML += '<strong>Erro detectado:</strong><br>' + e.message + '<br><br>';
+        }
+      });
+    </script>
+
+    <!-- BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="error-container"></div>
+    <div id="root">
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; color: #059669;">
+        <div style="width: 40px; height: 40px; border: 4px solid #059669; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 10px; font-weight: bold; font-family: sans-serif;">Carregando sistema...</p>
+      </div>
+    </div>
     
+    <style>
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+
     <!-- Carrega o app monolítico -->
     <script type="text/babel" data-type="module" data-presets="typescript,react" src="./index.tsx"></script>
     
     <script>
+      // Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW registered'))
-            .catch(err => console.log('SW failed', err));
+            .then(reg => {
+              // Checa se há atualização
+              reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed') {
+                    if (navigator.serviceWorker.controller) {
+                      console.log('Nova atualização disponível!');
+                    }
+                  }
+                };
+              };
+            })
+            .catch(err => console.log('SW falhou:', err));
         });
       }
     </script>
