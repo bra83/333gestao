@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v33-maintenance';
+const CACHE_NAME = '3d-erp-v7.0-recovery';
 const assets = [
   './',
   './index.html',
@@ -7,7 +7,7 @@ const assets = [
   'https://cdn.tailwindcss.com'
 ];
 
-// Instalação: Cacheia apenas os assets estáticos core
+// Instalação
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -15,7 +15,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Ativação: Limpa caches antigos imediatamente
+// Ativação e Limpeza
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
@@ -24,17 +24,13 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: Rede primeiro, falha para cache. Ignora chamadas à API do Google Script.
+// Fetch com bypass para API do Google
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  
-  // Se for chamada para o Google Script, não usa cache de jeito nenhum
   if (url.hostname.includes('script.google.com')) {
     return;
   }
-
   event.respondWith(
-    fetch(event.request)
-      .catch(() => caches.match(event.request))
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
