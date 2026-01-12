@@ -67,21 +67,16 @@
       }
     </style>
 
-    <!-- IMPORT MAP: Strictly React 18 to avoid conflicts -->
+    <!-- IMPORT MAP: Strictly React 18 -->
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom"
+      }
+    }
+    </script>
 
     <!-- Error Handler para Debug -->
     <script>
@@ -91,6 +86,7 @@
           container.style.display = 'block';
           container.innerHTML += '<strong>Erro:</strong> ' + msg + '<br><br>';
         }
+        console.error(msg);
       }
       window.addEventListener('error', function(e) { showErr(e.message); });
       window.addEventListener('unhandledrejection', function(e) { showErr(e.reason); });
@@ -112,7 +108,7 @@
       @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 
-    <!-- Carrega o app monolítico -->
+    <!-- Carrega a aplicação unificada -->
     <script type="text/babel" data-type="module" data-presets="typescript,react" src="./index.tsx"></script>
     
     <script>
@@ -121,6 +117,7 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
             .then(reg => {
+              console.log('SW registrado');
               reg.onupdatefound = () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
