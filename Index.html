@@ -89,17 +89,20 @@
     <script type="module" src="./index.tsx"></script>
     
     <script>
-      // Só registra o Service Worker se a origem bater com o host atual
-      // Isso evita erros de 'SecurityError' em ambientes de preview/sandbox
       if ('serviceWorker' in navigator && window.location.origin !== 'null') {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('SW registrado com sucesso');
+            console.log('SW atualizado');
+            reg.onupdatefound = () => {
+              const installingWorker = reg.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  window.location.reload();
+                }
+              };
+            };
           }).catch(err => {
-            // Silencia erro de origem cruzada em previews, mas loga outros erros
-            if (!err.message.includes('origin')) {
-              console.error('Falha no SW:', err);
-            }
+            if (!err.message.includes('origin')) console.error('SW Error:', err);
           });
         });
       }
