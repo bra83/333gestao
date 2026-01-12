@@ -28,7 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // LEITURA (GET)
+  // LEITURA (GET) - Mantém igual, pois estava funcionando
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -40,7 +40,6 @@ const App: React.FC = () => {
     setLoading(true);
     try {
       const ts = new Date().getTime();
-      // Adiciona timestamp para evitar qualquer cache intermediário
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
       const settingsJson = await settingsRes.json();
       setSettings(settingsJson);
@@ -50,7 +49,6 @@ const App: React.FC = () => {
 
       const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({
         ...item,
-        // Garante que o ID seja string. O backend agora vai garantir que o ID exista.
         id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `${prefix}-${ts}-${i}`,
         peso: Number(item.peso)||0,
         preco: Number(item.preco)||0,
@@ -78,18 +76,26 @@ const App: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ESCRITA (POST) - Resolve o problema de deletar criando linhas fantasmas
+  // ESCRITA (POST via FormData) - O pulo do gato para o Delete funcionar
   const apiCall = async (payload: any) => {
     if(!apiUrl) return;
     try {
-      // Usamos POST com 'text/plain' para evitar preflight CORS complexo do Google, mas enviamos JSON dentro.
+      // Converte o objeto JSON em FormData. 
+      // O Google Apps Script trata FormData nativamente como e.parameter, 
+      // o que evita erros de parsing e CORS.
+      const formData = new FormData();
+      Object.keys(payload).forEach(key => {
+        formData.append(key, String(payload[key]));
+      });
+
+      // Envia como POST sem headers complexos
       await fetch(apiUrl, {
         method: 'POST',
-        body: JSON.stringify(payload)
+        body: formData
       });
     } catch(e) { 
       console.error("API Error", e);
-      showToast("Erro ao salvar nuvem");
+      showToast("Erro ao salvar nuvem (mas salvo local)");
     }
   };
 
@@ -104,7 +110,6 @@ const App: React.FC = () => {
   };
 
   const executeDelete = async (type: string, id: string) => {
-    // Garante limpeza do ID antes de enviar
     const cleanId = String(id).trim();
     if (!cleanId) return;
     await apiCall({ type, action: 'delete', id: cleanId });
@@ -129,9 +134,7 @@ const App: React.FC = () => {
 
   const handleDeleteStock = async (id: string) => {
     if (!window.confirm("Apagar permanentemente?")) return;
-    // Otimista: remove da UI
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
-    // Backend: envia comando de extermínio
     await executeDelete('estoque', id);
     showToast('Removido!');
   };
