@@ -38,14 +38,11 @@ const App: React.FC = () => {
     setLoading(true);
     try {
       const ts = new Date().getTime();
-      
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
-      if (!settingsRes.ok) throw new Error(`HTTP Error: ${settingsRes.status}`);
       const settingsJson = await settingsRes.json();
       setSettings(settingsJson);
 
       const dataRes = await fetch(`${targetUrl}?type=read_data&t=${ts}`);
-      if (!dataRes.ok) throw new Error(`HTTP Error: ${dataRes.status}`);
       const dataJson = await dataRes.json();
 
       const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({
@@ -64,10 +61,8 @@ const App: React.FC = () => {
         gastos: fixId(dataJson.gastos, 'ga')
       });
       showToast('Sincronizado!');
-
     } catch (err: any) {
-      console.error('API Error:', err);
-      setLastError('Erro de conexão. Verifique o Apps Script.');
+      setLastError('Erro de conexão.');
       showToast('Modo Offline');
       if (data.estoque.length === 0) setData(MOCK_DATA);
     } finally {
@@ -75,22 +70,13 @@ const App: React.FC = () => {
     }
   }, [apiUrl]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const apiCall = async (params: URLSearchParams) => {
     if(!apiUrl) return;
     try {
-      // Usamos GET para evitar problemas de CORS em redirecionamentos do Apps Script
-      // e garantir que o comando chegue com todos os parâmetros na URL
-      await fetch(`${apiUrl}?${params.toString()}`, { 
-        method: 'GET',
-        mode: 'no-cors'
-      });
-    } catch(e) {
-      console.error("API Error", e);
-    }
+      await fetch(`${apiUrl}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
+    } catch(e) { console.error("API Error", e); }
   };
 
   const handleSaveSettings = async (newSettings: Settings) => {
@@ -105,45 +91,39 @@ const App: React.FC = () => {
     }
   };
 
+  // Helper function to unify delete logic and avoid duplication bugs
+  const executeDelete = async (type: string, id: string) => {
+    const cleanId = String(id).trim();
+    const params = new URLSearchParams();
+    params.append('type', type);
+    params.append('action', 'delete');
+    params.append('id', cleanId);
+    await apiCall(params);
+  };
+
   // --- ESTOQUE ---
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
     const id = "ST" + Date.now();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
-    
-    const params = new URLSearchParams({ 
-      type: 'estoque', action: 'create', id, nome, marca, 
-      peso: peso.toString(), preco: preco.toString(), cor, tipo
-    });
+    const params = new URLSearchParams({ type: 'estoque', action: 'create', id, nome, marca, peso: peso.toString(), preco: preco.toString(), cor, tipo });
     apiCall(params);
     showToast('Adicionado!');
   };
 
   const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
-    setData(prev => ({
-      ...prev,
-      estoque: prev.estoque.map(item => item.id === id ? { ...item, ...updates } : item)
-    }));
-    
     const currentItem = data.estoque.find(i => i.id === id);
     if (!currentItem) return;
     const finalItem = { ...currentItem, ...updates };
-
-    const params = new URLSearchParams({
-      type: 'estoque', action: 'update', id,
-      nome: finalItem.nome, marca: finalItem.marca || "",
-      peso: finalItem.peso.toString(), preco: finalItem.preco.toString(),
-      cor: finalItem.cor || "", tipo: finalItem.tipo || ""
-    });
+    setData(prev => ({ ...prev, estoque: prev.estoque.map(item => item.id === id ? finalItem : item) }));
+    const params = new URLSearchParams({ type: 'estoque', action: 'update', id, nome: finalItem.nome, marca: finalItem.marca || "", peso: finalItem.peso.toString(), preco: finalItem.preco.toString(), cor: finalItem.cor || "", tipo: finalItem.tipo || "" });
     apiCall(params);
   };
 
   const handleDeleteStock = async (id: string) => {
-    if (!window.confirm("Apagar este carretel permanentemente?")) return;
+    if (!window.confirm("Apagar permanentemente?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
-    // Para deleção, enviamos apenas o ID e o comando, garantindo que o script não tente preencher outras colunas
-    const params = new URLSearchParams({ type: 'estoque', action: 'delete', id });
-    apiCall(params);
+    await executeDelete('estoque', id);
     showToast('Removido!');
   };
 
@@ -151,23 +131,13 @@ const App: React.FC = () => {
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
     const id = "VE" + Date.now();
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
-    
     setData(prev => ({ ...prev, vendas: [newSale, ...prev.vendas] }));
-    
     if (stockId) {
        const stockItem = data.estoque.find(s => s.id === stockId);
-       if (stockItem) {
-          const newWeight = Math.max(0, stockItem.peso - peso);
-          handleUpdateStock(stockId, { peso: newWeight });
-       }
+       if (stockItem) handleUpdateStock(stockId, { peso: Math.max(0, stockItem.peso - peso) });
     }
-
-    const params = new URLSearchParams({ 
-      type: 'venda', action: 'create', id, item, material, peso: peso.toString(),
-      venda: venda.toFixed(2), lucro: lucro.toFixed(2), data: newSale.data
-    });
+    const params = new URLSearchParams({ type: 'venda', action: 'create', id, item, material, peso: peso.toString(), venda: venda.toFixed(2), lucro: lucro.toFixed(2), data: newSale.data });
     apiCall(params);
-    
     showToast('Venda Registrada!');
     setView(ViewState.TRANSACTIONS);
   };
@@ -175,59 +145,35 @@ const App: React.FC = () => {
   const handleUpdateSale = async (id: string, newVal: number, newProfit: number) => {
     const sale = data.vendas.find(s => s.id === id);
     if (!sale) return;
-
-    setData(prev => ({
-      ...prev,
-      vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: newVal, lucro: newProfit } : s)
-    }));
-    
-    const params = new URLSearchParams({ 
-      type: 'venda', action: 'update', id, data: sale.data, item: sale.item, 
-      material: sale.material, peso: sale.peso.toString(),
-      venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) 
-    });
-    apiCall(params);
+    setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: newVal, lucro: newProfit } : s) }));
+    apiCall(new URLSearchParams({ type: 'venda', action: 'update', id, data: sale.data, item: sale.item, material: sale.material, peso: sale.peso.toString(), venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) }));
   };
 
   const handleDeleteSale = async (id: string) => {
     setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
-    apiCall(new URLSearchParams({ type: 'venda', action: 'delete', id }));
+    await executeDelete('venda', id);
     showToast('Venda apagada!');
   };
 
   // --- GASTOS ---
   const handleAddExpense = async (descricao: string, valor: number, dataStr: string) => {
     const id = "GA" + Date.now();
-    const newExpense: Expense = { id, descricao, valor, data: dataStr };
-    
+    const newExpense = { id, descricao, valor, data: dataStr };
     setData(prev => ({ ...prev, gastos: [newExpense, ...prev.gastos] }));
-    
-    const params = new URLSearchParams({
-      type: 'gasto', action: 'create', id, data: dataStr, descricao, valor: valor.toString()
-    });
-    apiCall(params);
+    apiCall(new URLSearchParams({ type: 'gasto', action: 'create', id, data: dataStr, descricao, valor: valor.toString() }));
     showToast('Gasto registrado!');
   };
 
   const handleUpdateExpense = async (id: string, descricao: string, valor: number) => {
     const exp = data.gastos.find(g => g.id === id);
     if (!exp) return;
-
-    setData(prev => ({
-      ...prev,
-      gastos: prev.gastos.map(g => g.id === id ? { ...g, descricao, valor } : g)
-    }));
-    
-    const params = new URLSearchParams({
-      type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString()
-    });
-    apiCall(params);
+    setData(prev => ({ ...prev, gastos: prev.gastos.map(g => g.id === id ? { ...g, descricao, valor } : g) }));
+    apiCall(new URLSearchParams({ type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString() }));
   };
 
   const handleDeleteExpense = async (id: string) => {
     setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
-    // Garante que o ID enviado seja o único parâmetro para evitar confusão no Sheets
-    apiCall(new URLSearchParams({ type: 'gasto', action: 'delete', id }));
+    await executeDelete('gasto', id);
     showToast('Gasto removido!');
   };
 
@@ -236,25 +182,14 @@ const App: React.FC = () => {
     localStorage.setItem('APPS_SCRIPT_URL', val);
   };
 
-  // Ícones simplificados para navegação
-  const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-  const IconCalc = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>;
-  const IconBox = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
-  const IconList = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
-  const IconSettings = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
-
   const NavButton = ({ v, icon: Icon, label }: { v: ViewState, icon: any, label: string }) => (
-    <button 
-      onClick={() => setView(v)} 
-      className={`flex flex-col items-center justify-center w-full py-2 transition-colors ${view === v ? 'text-primary scale-110' : 'text-secondary hover:text-primary/70'}`}
-    >
-      <Icon />
-      <span className="text-[10px] mt-1 font-bold">{label}</span>
+    <button onClick={() => setView(v)} className={`flex flex-col items-center justify-center w-full py-2 transition-colors ${view === v ? 'text-primary scale-110' : 'text-secondary hover:text-primary/70'}`}>
+      <Icon /><span className="text-[10px] mt-1 font-bold">{label}</span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-dark text-slate-600 font-sans selection:bg-primary selection:text-white">
+    <div className="min-h-screen bg-dark text-slate-600 font-sans">
       <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-emerald-100 p-4 z-20 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
           <div className="flex items-center -space-x-1.5 select-none">
@@ -268,57 +203,24 @@ const App: React.FC = () => {
 
       <main className="p-4 max-w-lg mx-auto">
         {view === ViewState.DASHBOARD && <DashboardView data={data} onNavigate={setView} />}
-        {view === ViewState.CALCULATOR && (
-          <Calculator 
-            settings={settings} 
-            stock={data.estoque} 
-            onSaveSale={handleAddSale} 
-          />
-        )}
-        {view === ViewState.INVENTORY && (
-          <InventoryView 
-            stock={data.estoque} 
-            onAddStock={handleAddStock}
-            onUpdateStock={handleUpdateStock}
-            onDeleteStock={handleDeleteStock}
-          />
-        )}
-        {view === ViewState.TRANSACTIONS && (
-          <TransactionsView 
-            sales={data.vendas} 
-            expenses={data.gastos}
-            onUpdateSale={handleUpdateSale} 
-            onDeleteSale={handleDeleteSale}
-            onAddExpense={handleAddExpense}
-            onUpdateExpense={handleUpdateExpense}
-            onDeleteExpense={handleDeleteExpense}
-          />
-        )}
-        {view === ViewState.SETTINGS && (
-          <SettingsView 
-            settings={settings} 
-            onSave={handleSaveSettings} 
-            apiUrl={apiUrl} 
-            onUrlChange={handleUrlChange}
-            lastError={lastError}
-            onRetry={fetchData}
-          />
-        )}
+        {view === ViewState.CALCULATOR && <Calculator settings={settings} stock={data.estoque} onSaveSale={handleAddSale} />}
+        {view === ViewState.INVENTORY && <InventoryView stock={data.estoque} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} />}
+        {view === ViewState.TRANSACTIONS && <TransactionsView sales={data.vendas} expenses={data.gastos} onUpdateSale={handleUpdateSale} onDeleteSale={handleDeleteSale} onAddExpense={handleAddExpense} onUpdateExpense={handleUpdateExpense} onDeleteExpense={handleDeleteExpense} />}
+        {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={handleSaveSettings} apiUrl={apiUrl} onUrlChange={handleUrlChange} lastError={lastError} onRetry={fetchData} />}
       </main>
 
-      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe z-30 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe z-30 shadow-sm">
         <div className="flex justify-around max-w-lg mx-auto pt-1">
-          <NavButton v={ViewState.DASHBOARD} icon={IconHome} label="Início" />
-          <NavButton v={ViewState.CALCULATOR} icon={IconCalc} label="Calc" />
-          <NavButton v={ViewState.INVENTORY} icon={IconBox} label="Estoque" />
-          <NavButton v={ViewState.TRANSACTIONS} icon={IconList} label="Finanças" />
-          <NavButton v={ViewState.SETTINGS} icon={IconSettings} label="Config" />
+          <NavButton v={ViewState.DASHBOARD} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>} label="Início" />
+          <NavButton v={ViewState.CALCULATOR} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>} label="Calc" />
+          <NavButton v={ViewState.INVENTORY} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8l-7-4-7 4v8l7 4z"/></svg>} label="Estoque" />
+          <NavButton v={ViewState.TRANSACTIONS} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>} label="Finanças" />
+          <NavButton v={ViewState.SETTINGS} icon={() => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg>} label="Config" />
         </div>
       </nav>
       
       {toast && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white text-slate-700 px-6 py-3 rounded-full shadow-xl text-sm border border-emerald-100 z-50 animate-bounce font-bold flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-primary"></span>
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white text-slate-700 px-6 py-3 rounded-full shadow-xl text-sm border border-emerald-100 z-50 animate-bounce font-bold">
           {toast}
         </div>
       )}
