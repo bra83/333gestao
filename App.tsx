@@ -28,7 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // LEITURA (GET) - Versão Blindada v9
+  // LEITURA (GET) - Versão com Correção Automática de Escala (v11)
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -47,7 +47,7 @@ const App: React.FC = () => {
       if (settingsRes.ok) {
          const settingsJson = await settingsRes.json();
          loadedSettings = { ...DEFAULT_SETTINGS, ...settingsJson };
-         // Sanitização de settings para evitar Infinity na calculadora
+         // Sanitização de settings
          if (loadedSettings.vidaUtilHoras < 100) loadedSettings.vidaUtilHoras = 8000;
          if (loadedSettings.horasTrab < 1) loadedSettings.horasTrab = 160;
          if (loadedSettings.eficienciaFonte <= 0) loadedSettings.eficienciaFonte = 0.9;
@@ -60,7 +60,7 @@ const App: React.FC = () => {
       
       const dataJson = await dataRes.json();
 
-      // Função Auxiliar: Sanitização Agressiva de Números
+      // FUNÇÃO CORRETORA DE VÍRGULA
       const fixItem = (item: any, prefix: string, idx: number) => {
          const id = (item.id && String(item.id).trim() !== "") 
             ? String(item.id) 
@@ -73,20 +73,25 @@ const App: React.FC = () => {
             if (typeof val === 'number') {
               num = val;
             } else {
-              // Tenta limpar string
+              // Limpa a string
               let str = String(val).trim().replace(/[^\d.,-]/g, '');
-              // Se formato BR (vírgula decimal), inverte para formato JS
+              // Lógica Brasil x EUA
               if (str.includes(',') && !str.includes('e')) {
                  str = str.replace(/\./g, '').replace(',', '.');
               }
               num = parseFloat(str);
             }
 
-            // CHECK FINAL: Se não é número finito OU se é absurdamente grande (> 1 milhão)
-            // Isso mata o bug dos quadrilhões
-            if (!isFinite(num) || isNaN(num) || Math.abs(num) > 1000000) {
-              return 0; 
+            if (!isFinite(num) || isNaN(num)) return 0;
+
+            // --- A MÁGICA ACONTECE AQUI ---
+            // Se o número for maior que 20.000 (valor irreal para uma venda de impressão 3D),
+            // assumimos que a vírgula sumiu ou correu para a direita.
+            // Dividimos por 10 repetidamente até o valor fazer sentido (< 20.000).
+            while (Math.abs(num) > 20000) {
+              num = num / 10;
             }
+            
             return num;
          };
 
@@ -109,7 +114,7 @@ const App: React.FC = () => {
         gastos: safeList(dataJson.gastos).map((item, i) => fixItem(item, 'ga', i))
       });
       
-      showToast('Dados Atualizados!');
+      showToast('Dados Corrigidos!');
       setLastError(null);
     } catch (err: any) {
       console.error(err);
@@ -162,7 +167,7 @@ const App: React.FC = () => {
     await apiCall({ type, action: 'delete', id: cleanId });
   };
 
-  // --- HANDLERS (Igual ao anterior) ---
+  // --- HANDLERS ---
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
     const id = "ST" + Date.now();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
