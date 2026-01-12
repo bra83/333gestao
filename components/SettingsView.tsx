@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Settings } from '../types';
 
@@ -8,9 +9,10 @@ interface SettingsViewProps {
   onUrlChange: (url: string) => void;
   lastError?: string | null;
   onRetry?: () => void;
+  onMaintenance?: () => void;
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, apiUrl, onUrlChange, lastError, onRetry }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, apiUrl, onUrlChange, lastError, onRetry, onMaintenance }) => {
   const [formData, setFormData] = useState<Settings>(settings);
 
   const handleChange = (key: keyof Settings, value: string) => {
@@ -50,14 +52,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, ap
           </div>
         )}
 
-        {onRetry && (
-          <button 
-            onClick={onRetry}
-            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs py-3 rounded-xl font-bold transition-colors"
-          >
-            Testar Conexão / Sincronizar Agora
-          </button>
-        )}
+        <div className="flex gap-2">
+            {onRetry && (
+            <button 
+                onClick={onRetry}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs py-3 rounded-xl font-bold transition-colors"
+            >
+                Sincronizar
+            </button>
+            )}
+            {onMaintenance && (
+             <button 
+                onClick={onMaintenance}
+                className="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-600 text-xs py-3 rounded-xl font-bold transition-colors border border-orange-200"
+                title="Use se os dados estiverem bagunçados"
+            >
+                Reparar Planilha
+            </button>
+            )}
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-emerald-100">
