@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>3D Print ERP</title>
+    <meta name="theme-color" content="#ecfdf5" />
+    <meta name="description" content="Dashboard de controle para impressão 3D" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Google Fonts: Nunito (Rounded/Gordinha) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Nunito', 'sans-serif'],
+            },
+            colors: {
+              primary: '#059669', // Emerald 600 (Darker Green)
+              primaryDark: '#047857', // Emerald 700
+              secondary: '#64748b', // Slate 500
+              dark: '#ecfdf5', // Emerald 50 (Background)
+              surface: '#ffffff', // White (Cards)
+              accent: '#34d399', // Emerald 400
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- CONFIGURAÇÃO DA API (GOOGLE APPS SCRIPT) -->
+    <script>
+      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwq8H5vQmKx1wx5A-9GxV7sONy171DB4wk-_Bui94s3KTUD14r_Qj7Tu2QLcmO-YVasig/exec";
+    </script>
+
+    <style>
+      body {
+        background-color: #ecfdf5; /* Emerald 50 */
+        color: #334155; /* Slate 700 */
+        -webkit-tap-highlight-color: transparent;
+      }
+      /* Hide scrollbar for clean mobile look */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW failed', err));
+        });
+      }
+    </script>
+  </body>
+</html>
