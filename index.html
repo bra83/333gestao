@@ -36,7 +36,7 @@
     </script>
     
     <script>
-      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwq8H5vQmKx1wx5A-9GxV7sONy171DB4wk-_Bui94s3KTUD14r_Qj7Tu2QLcmO-YVasig/exec";
+      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIaANtpjSVGA8wezqRuG6sLqRBptQsKF1V-rLA8KoKvfrZD3WpEsaEit3Bc3qXIBMvBg/exec";
     </script>
 
     <style>
@@ -66,12 +66,12 @@
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "recharts": "https://esm.sh/recharts@^3.6.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1"
   }
 }
 </script>
@@ -87,21 +87,13 @@
     <script type="module" src="./index.tsx"></script>
     
     <script>
-      // Registro do Service Worker apenas em produção e se suportado
       if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('SW ativo');
-            reg.onupdatefound = () => {
-              const installingWorker = reg.installing;
-              installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // Força recarregamento quando houver nova versão
-                  window.location.reload();
-                }
-              };
-            };
-          }).catch(err => console.debug('SW ignorado (Preview)'));
+            console.log('SW registrado: ', reg.scope);
+          }, err => {
+            console.log('SW falhou: ', err);
+          });
         });
       }
     </script>
