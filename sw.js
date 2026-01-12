@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v15'; // Bump version
+const CACHE_NAME = '3d-erp-v18'; // Bump version
 const urlsToCache = [
   './',
   './index.html',
