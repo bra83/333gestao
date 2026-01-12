@@ -59,10 +59,15 @@
         border-radius: 8px;
         border: 1px solid #f87171;
         white-space: pre-wrap;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
       }
     </style>
 
-    <!-- IMPORT MAP: Corrigido para usar APENAS React 18 -->
+    <!-- IMPORT MAP: Strictly React 18 to avoid conflicts -->
     <script type="importmap">
 {
   "imports": {
@@ -80,13 +85,15 @@
 
     <!-- Error Handler para Debug -->
     <script>
-      window.addEventListener('error', function(e) {
+      function showErr(msg) {
         var container = document.getElementById('error-container');
         if(container) {
           container.style.display = 'block';
-          container.innerHTML += '<strong>Erro detectado:</strong><br>' + e.message + '<br><br>';
+          container.innerHTML += '<strong>Erro:</strong> ' + msg + '<br><br>';
         }
-      });
+      }
+      window.addEventListener('error', function(e) { showErr(e.message); });
+      window.addEventListener('unhandledrejection', function(e) { showErr(e.reason); });
     </script>
 
     <!-- BABEL -->
@@ -114,7 +121,6 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
             .then(reg => {
-              // Checa se há atualização
               reg.onupdatefound = () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
