@@ -1,5 +1,5 @@
-const CACHE_NAME = '3d-erp-v23-final';
-const urlsToCache = [
+const CACHE_NAME = '3d-erp-v24-deploy-fix';
+const assets = [
   './',
   './index.html',
   './manifest.json',
@@ -9,30 +9,21 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    ))
   );
   return self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
-  // Estratégia Network-First para evitar ficar preso em cache velho durante debug
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
