@@ -28,7 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // LEITURA (GET) - Versão Blindada
+  // LEITURA (GET) - Versão Blindada e Corrigida Decimal
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -54,20 +54,27 @@ const App: React.FC = () => {
       
       const dataJson = await dataRes.json();
 
-      // Função Auxiliar para tratamento de números e IDs
+      // Função Auxiliar INTELIGENTE para tratamento de números
       const fixItem = (item: any, prefix: string, idx: number) => {
-         // Garante ID
          const id = (item.id && String(item.id).trim() !== "") 
             ? String(item.id) 
             : `${prefix}-${ts}-${idx}`;
 
-         // Garante Números (O Backend já limpa, mas aqui é dupla segurança)
          const safeNum = (val: any) => {
             if (typeof val === 'number') return val;
             if (!val) return 0;
-            // Se vier string "1.000,00" ainda (caso o backend falhe), tentamos limpar
-            const cleanStr = String(val).replace(/\./g, '').replace(',', '.');
-            const num = parseFloat(cleanStr);
+            
+            let str = String(val).trim();
+
+            // Lógica de Detecção de Formato
+            // Se tiver vírgula, assume que é formato BR (ex: "1.200,50" ou "50,00")
+            if (str.includes(',')) {
+               str = str.replace(/\./g, '').replace(',', '.');
+            }
+            // Se NÃO tiver vírgula, mas tiver ponto (ex: "119.90"), assume que já é float internacional.
+            // NÃO removemos o ponto nesse caso, senão vira 11990!
+            
+            const num = parseFloat(str);
             return isNaN(num) ? 0 : num;
          };
 
@@ -96,7 +103,6 @@ const App: React.FC = () => {
       console.error(err);
       setLastError('Erro de conexão ou script.');
       showToast('Modo Offline Ativado');
-      // Só usa mock data se estiver realmente vazio para não sobrescrever dados reais em caso de erro momentâneo
       if (data.estoque.length === 0) setData(MOCK_DATA);
     } finally {
       setLoading(false);
@@ -134,9 +140,8 @@ const App: React.FC = () => {
     }
   };
 
-  // Botão de pânico (Manutenção manual se precisar forçar sync)
   const handleMaintenance = async () => {
-    fetchData(); // Apenas recarrega, pois o backend v7 faz manutenção automática na leitura
+    fetchData(); // Apenas recarrega (o backend v8 já faz o reparo na leitura)
   };
 
   const executeDelete = async (type: string, id: string) => {
