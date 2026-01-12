@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CDN -->
+    <!-- Tailwind CDN (Mantido para simplicidade, embora pudesse ser via CSS) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -48,89 +48,27 @@
       }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      #error-container {
-        display: none;
-        padding: 20px;
-        background: #fee2e2;
-        color: #991b1b;
-        font-family: monospace;
-        margin: 20px;
-        border-radius: 8px;
-        border: 1px solid #f87171;
-        white-space: pre-wrap;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 9999;
-      }
     </style>
-
-    <!-- IMPORT MAP: Strictly React 18 -->
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom"
-      }
-    }
-    </script>
-
-    <!-- Error Handler para Debug -->
-    <script>
-      function showErr(msg) {
-        var container = document.getElementById('error-container');
-        if(container) {
-          container.style.display = 'block';
-          container.innerHTML += '<strong>Erro:</strong> ' + msg + '<br><br>';
-        }
-        console.error(msg);
-      }
-      window.addEventListener('error', function(e) { showErr(e.message); });
-      window.addEventListener('unhandledrejection', function(e) { showErr(e.reason); });
-    </script>
-
-    <!-- BABEL -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+</head>
   <body>
-    <div id="error-container"></div>
-    <div id="root">
-      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; color: #059669;">
-        <div style="width: 40px; height: 40px; border: 4px solid #059669; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 10px; font-weight: bold; font-family: sans-serif;">Carregando sistema...</p>
-      </div>
-    </div>
-    
-    <style>
-      @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-
-    <!-- Carrega a aplicação unificada -->
-    <script type="text/babel" data-type="module" data-presets="typescript,react" src="./index.tsx"></script>
-    
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
     <script>
-      // Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-              console.log('SW registrado');
-              reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                installingWorker.onstatechange = () => {
-                  if (installingWorker.state === 'installed') {
-                    if (navigator.serviceWorker.controller) {
-                      console.log('Nova atualização disponível!');
-                      // Opcional: window.location.reload();
-                    }
-                  }
-                };
-              };
-            })
-            .catch(err => console.log('SW falhou:', err));
+          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW falhou:', err));
         });
       }
     </script>
