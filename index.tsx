@@ -539,7 +539,11 @@ const App: React.FC = () => {
       
       const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({ ...item, id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `${prefix}-${ts}-${i}`, peso: Number(item.peso)||0, preco: Number(item.preco)||0, venda: Number(item.venda)||0, lucro: Number(item.lucro)||0, valor: Number(item.valor)||0 }));
       
-      setData({ estoque: fixId(dataJson.estoque, 'st'), vendas: fixId(dataJson.vendas, 've'), gastos: fixId(dataJson.gastos, 'ga') });
+      setData({ 
+        estoque: fixId(dataJson.estoque, 'st').filter((i:any) => i.nome !== 'deleted' && i.nome !== ''),
+        vendas: fixId(dataJson.vendas, 've').filter((i:any) => i.item !== 'deleted'),
+        gastos: fixId(dataJson.gastos, 'ga').filter((i:any) => i.descricao !== 'deleted' && i.descricao !== '')
+      });
       showToast('Dados sincronizados!');
     } catch (err: any) {
       console.error(err);
