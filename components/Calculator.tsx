@@ -38,6 +38,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
   useEffect(() => {
     if (stock.length === 0) return;
     const filament = stock[selectedFilamentIdx];
+    if (!filament) return;
 
     const materialBase = (weight / 1000) * filament.preco;
     const materialLoss = materialBase * ((settings.perdaMaterial || 5) / 100);
@@ -90,10 +91,11 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
   const handleSave = () => {
     if (!itemName) return alert('Digite o nome do item');
     const filament = stock[selectedFilamentIdx];
+    
     const materialName = filament.marca ? `${filament.nome} (${filament.marca})` : filament.nome;
     
     if (window.confirm(`Registrar venda de "${itemName}" por R$ ${costs.finalPrice.toFixed(2)}?`)) {
-      // Passa o ID do filamento para o App principal
+      // Aqui passamos o ID do filamento para o App poder descontar
       onSaveSale(itemName, materialName, weight, costs.finalPrice, costs.profit, filament.id);
       
       setItemName('');
