@@ -4,7 +4,7 @@ import { Settings, StockItem } from '../types';
 interface CalculatorProps {
   settings: Settings;
   stock: StockItem[];
-  onSaveSale: (item: string, material: string, weight: number, price: number, profit: number) => void;
+  onSaveSale: (item: string, material: string, weight: number, price: number, profit: number, stockId?: string) => void;
 }
 
 export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveSale }) => {
@@ -93,7 +93,9 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     const materialName = filament.marca ? `${filament.nome} (${filament.marca})` : filament.nome;
     
     if (window.confirm(`Registrar venda de "${itemName}" por R$ ${costs.finalPrice.toFixed(2)}?`)) {
-      onSaveSale(itemName, materialName, weight, costs.finalPrice, costs.profit);
+      // Passa o ID do filamento para o App principal
+      onSaveSale(itemName, materialName, weight, costs.finalPrice, costs.profit, filament.id);
+      
       setItemName('');
       setWeight(0);
       setHours(0);
