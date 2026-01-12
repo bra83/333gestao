@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Sale, Expense } from '../types';
 
@@ -33,6 +34,13 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
 
   // Calculations
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.valor, 0);
+
+  // Helper de Formatação Segura
+  const fmtMoney = (val: number) => {
+    if (!isFinite(val) || isNaN(val)) return "R$ 0,00";
+    if (Math.abs(val) > 100000) return "R$ ???"; // Evita estouro de layout
+    return `R$ ${val.toFixed(2)}`;
+  };
 
   // --- SALES HELPERS ---
   const startEditSale = (sale: Sale) => {
@@ -144,8 +152,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 </div>
               ) : (
                 <div className="flex justify-between items-end border-t border-dashed border-slate-100 pt-3 mt-2">
-                  <div className="text-green-600 text-xs font-bold bg-green-100 px-3 py-1 rounded-full">Lucro: R$ {sale.lucro.toFixed(2)}</div>
-                  <div className="text-slate-700 font-black text-xl">R$ {sale.venda.toFixed(2)}</div>
+                  <div className="text-green-600 text-xs font-bold bg-green-100 px-3 py-1 rounded-full">Lucro: {fmtMoney(sale.lucro)}</div>
+                  <div className="text-slate-700 font-black text-xl">{fmtMoney(sale.venda)}</div>
                 </div>
               )}
             </div>
@@ -160,7 +168,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           {/* TOTAL DEBTS HEADER */}
           <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm">
              <span className="text-red-400 text-xs font-black uppercase tracking-widest mb-1">Total de Débitos</span>
-             <span className="text-3xl font-black text-red-500">R$ {totalExpenses.toFixed(2)}</span>
+             <span className="text-3xl font-black text-red-500">{fmtMoney(totalExpenses)}</span>
           </div>
 
           {/* Add Expense Form */}
@@ -218,7 +226,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                        <div className="text-slate-400 text-xs font-semibold">{exp.data}</div>
                     </div>
                     <div className="text-right">
-                       <div className="text-red-400 font-black text-lg">- R$ {exp.valor.toFixed(2)}</div>
+                       <div className="text-red-400 font-black text-lg">- {fmtMoney(exp.valor)}</div>
                     </div>
 
                     {/* Actions Overlay */}
