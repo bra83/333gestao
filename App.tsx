@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, AppData, ViewState, StockItem, Sale, Expense } from './types';
 import { DEFAULT_SETTINGS, MOCK_DATA } from './constants';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // LEITURA (GET)
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -61,7 +63,9 @@ const App: React.FC = () => {
         gastos: fixId(dataJson.gastos, 'ga')
       });
       showToast('Sincronizado!');
+      setLastError(null);
     } catch (err: any) {
+      console.error(err);
       setLastError('Erro de conexão.');
       showToast('Modo Offline');
       if (data.estoque.length === 0) setData(MOCK_DATA);
@@ -72,33 +76,35 @@ const App: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const apiCall = async (params: URLSearchParams) => {
+  // ESCRITA (POST) - Resolve o problema de deletar criando linhas fantasmas
+  const apiCall = async (payload: any) => {
     if(!apiUrl) return;
     try {
-      await fetch(`${apiUrl}?${params.toString()}`, { method: 'GET', mode: 'no-cors' });
-    } catch(e) { console.error("API Error", e); }
+      // Usamos POST com 'text/plain' para evitar preflight CORS complexo do Google, mas enviamos JSON dentro.
+      await fetch(apiUrl, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    } catch(e) { 
+      console.error("API Error", e);
+      showToast("Erro ao salvar nuvem");
+    }
   };
 
   const handleSaveSettings = async (newSettings: Settings) => {
     setSettings(newSettings);
     if (apiUrl) {
       setLoading(true);
-      const params = new URLSearchParams({ type: 'save_settings' });
-      Object.entries(newSettings).forEach(([key, val]) => params.append(key, val.toString()));
-      await apiCall(params);
+      await apiCall({ type: 'save_settings', ...newSettings });
       setLoading(false);
       showToast('Configurações salvas!');
     }
   };
 
-  // Helper function to unify delete logic and avoid duplication bugs
   const executeDelete = async (type: string, id: string) => {
     const cleanId = String(id).trim();
-    const params = new URLSearchParams();
-    params.append('type', type);
-    params.append('action', 'delete');
-    params.append('id', cleanId);
-    await apiCall(params);
+    // Envia o objeto JSON explícito
+    await apiCall({ type, action: 'delete', id: cleanId });
   };
 
   // --- ESTOQUE ---
@@ -106,8 +112,7 @@ const App: React.FC = () => {
     const id = "ST" + Date.now();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
-    const params = new URLSearchParams({ type: 'estoque', action: 'create', id, nome, marca, peso: peso.toString(), preco: preco.toString(), cor, tipo });
-    apiCall(params);
+    await apiCall({ type: 'estoque', action: 'create', ...newItem });
     showToast('Adicionado!');
   };
 
@@ -116,8 +121,7 @@ const App: React.FC = () => {
     if (!currentItem) return;
     const finalItem = { ...currentItem, ...updates };
     setData(prev => ({ ...prev, estoque: prev.estoque.map(item => item.id === id ? finalItem : item) }));
-    const params = new URLSearchParams({ type: 'estoque', action: 'update', id, nome: finalItem.nome, marca: finalItem.marca || "", peso: finalItem.peso.toString(), preco: finalItem.preco.toString(), cor: finalItem.cor || "", tipo: finalItem.tipo || "" });
-    apiCall(params);
+    await apiCall({ type: 'estoque', action: 'update', ...finalItem });
   };
 
   const handleDeleteStock = async (id: string) => {
@@ -136,8 +140,7 @@ const App: React.FC = () => {
        const stockItem = data.estoque.find(s => s.id === stockId);
        if (stockItem) handleUpdateStock(stockId, { peso: Math.max(0, stockItem.peso - peso) });
     }
-    const params = new URLSearchParams({ type: 'venda', action: 'create', id, item, material, peso: peso.toString(), venda: venda.toFixed(2), lucro: lucro.toFixed(2), data: newSale.data });
-    apiCall(params);
+    await apiCall({ type: 'venda', action: 'create', ...newSale });
     showToast('Venda Registrada!');
     setView(ViewState.TRANSACTIONS);
   };
@@ -145,8 +148,9 @@ const App: React.FC = () => {
   const handleUpdateSale = async (id: string, newVal: number, newProfit: number) => {
     const sale = data.vendas.find(s => s.id === id);
     if (!sale) return;
-    setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: newVal, lucro: newProfit } : s) }));
-    apiCall(new URLSearchParams({ type: 'venda', action: 'update', id, data: sale.data, item: sale.item, material: sale.material, peso: sale.peso.toString(), venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) }));
+    const updatedSale = { ...sale, venda: newVal, lucro: newProfit };
+    setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? updatedSale : s) }));
+    await apiCall({ type: 'venda', action: 'update', ...updatedSale });
   };
 
   const handleDeleteSale = async (id: string) => {
@@ -160,15 +164,16 @@ const App: React.FC = () => {
     const id = "GA" + Date.now();
     const newExpense = { id, descricao, valor, data: dataStr };
     setData(prev => ({ ...prev, gastos: [newExpense, ...prev.gastos] }));
-    apiCall(new URLSearchParams({ type: 'gasto', action: 'create', id, data: dataStr, descricao, valor: valor.toString() }));
+    await apiCall({ type: 'gasto', action: 'create', ...newExpense });
     showToast('Gasto registrado!');
   };
 
   const handleUpdateExpense = async (id: string, descricao: string, valor: number) => {
     const exp = data.gastos.find(g => g.id === id);
     if (!exp) return;
-    setData(prev => ({ ...prev, gastos: prev.gastos.map(g => g.id === id ? { ...g, descricao, valor } : g) }));
-    apiCall(new URLSearchParams({ type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString() }));
+    const updatedExp = { ...exp, descricao, valor };
+    setData(prev => ({ ...prev, gastos: prev.gastos.map(g => g.id === id ? updatedExp : g) }));
+    await apiCall({ type: 'gasto', action: 'update', ...updatedExp });
   };
 
   const handleDeleteExpense = async (id: string) => {
