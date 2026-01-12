@@ -1,4 +1,5 @@
-const CACHE_NAME = '3d-erp-v28-fix-delete';
+
+const CACHE_NAME = '3d-erp-v30-clean-post';
 const assets = [
   './',
   './index.html',
@@ -6,6 +7,7 @@ const assets = [
   'https://cdn.tailwindcss.com'
 ];
 
+// Instalação: Cacheia apenas os assets estáticos core
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -13,18 +15,26 @@ self.addEventListener('install', event => {
   );
 });
 
+// Ativação: Limpa caches antigos imediatamente
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-    ))
+      keys.map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
   );
-  return self.clients.claim();
 });
 
+// Fetch: Rede primeiro, falha para cache. Ignora chamadas à API do Google Script.
 self.addEventListener('fetch', event => {
-  // Estratégia Network-First para garantir atualizações
+  const url = new URL(event.request.url);
+  
+  // Se for chamada para o Google Script, não usa cache de jeito nenhum
+  if (url.hostname.includes('script.google.com')) {
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request)
+      .catch(() => caches.match(event.request))
   );
 });
