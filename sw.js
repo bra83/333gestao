@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v13'; // Atualizado para v13 para limpar o erro
+const CACHE_NAME = '3d-erp-v14'; // Bump version
 const urlsToCache = [
   './',
   './index.html',
