@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v26-fix';
+const CACHE_NAME = '3d-erp-v28-fix-delete';
 const assets = [
   './',
   './index.html',
