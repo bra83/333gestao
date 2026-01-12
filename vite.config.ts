@@ -1,23 +1,24 @@
-import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
+// Define __dirname in ESM
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+export default defineConfig({
+  plugins: [react()],
+  base: './',
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
       },
-      plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
-});
+    },
+  },
+  // Garante que o sw.js e manifest.json sejam tratados como assets se estiverem na raiz
+  publicDir: './', 
+})
