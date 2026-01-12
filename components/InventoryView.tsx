@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { StockItem } from '../types';
 import { SpoolCard } from './SpoolCard';
@@ -16,7 +17,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ stock, onAddStock,
   const [newItemBrand, setNewItemBrand] = useState('');
   const [newItemWeight, setNewItemWeight] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
-  const [newItemColor, setNewItemColor] = useState('#3b82f6'); // Default Blue
+  const [newItemColor, setNewItemColor] = useState('#3b82f6');
   const [newItemType, setNewItemType] = useState('PLA');
 
   const submitStock = () => {
@@ -44,31 +45,29 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ stock, onAddStock,
     <div className="space-y-6 pb-20">
       
       {lowStockItems.length > 0 && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-red-500 font-bold mb-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span>Filamento Acabando!</span>
-          </div>
-          <ul className="list-disc list-inside text-sm text-red-400 pl-1">
-            {lowStockItems.map((item, idx) => (
-              <li key={idx}>{item.nome} ({item.peso}g)</li>
-            ))}
-          </ul>
+        <div className="bg-heart/10 border-2 border-heart p-4 shadow-sm flex items-center gap-3">
+            <div className="animate-pulse text-heart">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <div>
+                <strong className="text-heart font-pixel text-lg uppercase block">Low Health!</strong>
+                <span className="text-xs text-heart uppercase">Recarregue: {lowStockItems.map(i => i.nome).join(', ')}</span>
+            </div>
         </div>
       )}
 
-      <div className="bg-surface p-5 rounded-2xl border border-emerald-100 shadow-sm">
-        <h3 className="text-slate-700 font-bold mb-3">Novo Carretel</h3>
+      <div className="retro-box p-5 bg-white">
+        <h3 className="text-secondary font-pixel text-lg uppercase mb-4 border-b-2 border-secondary/20 pb-2">Loot Encontrado</h3>
         <div className="grid grid-cols-1 gap-3">
             <div className="grid grid-cols-2 gap-2">
                <input 
-                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 text-sm focus:border-primary focus:outline-none" 
-                placeholder='Nome (Ex: Preto Fosco)' 
+                className="bg-[#f0f0f0] border-2 border-[#ccc] p-2 text-bgDark text-sm focus:border-primary focus:bg-white focus:outline-none font-bold" 
+                placeholder='Item (Ex: Preto)' 
                 value={newItemName} 
                 onChange={e => setNewItemName(e.target.value)} 
               />
               <select 
-                 className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 text-sm focus:border-primary focus:outline-none"
+                 className="bg-[#f0f0f0] border-2 border-[#ccc] p-2 text-bgDark text-sm focus:border-primary focus:outline-none font-bold"
                  value={newItemType}
                  onChange={e => setNewItemType(e.target.value)}
               >
@@ -78,28 +77,29 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ stock, onAddStock,
 
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <input 
-                className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 text-sm focus:border-primary focus:outline-none" 
-                placeholder='Marca (Ex: Voolt3D)' 
+                className="bg-[#f0f0f0] border-2 border-[#ccc] p-2 text-bgDark text-sm focus:border-primary focus:outline-none font-bold" 
+                placeholder='Marca' 
                 value={newItemBrand} 
                 onChange={e => setNewItemBrand(e.target.value)} 
               />
-              <div className="relative overflow-hidden rounded-xl border border-slate-200 w-12 h-full">
+              <div className="w-12 h-full border-2 border-[#ccc] bg-[#f0f0f0] relative">
                 <input 
                   type="color" 
-                  className="absolute -top-2 -left-2 w-16 h-16 p-0 border-none cursor-pointer" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                   value={newItemColor} 
                   onChange={e => setNewItemColor(e.target.value)}
                 />
+                <div className="w-full h-full" style={{backgroundColor: newItemColor}}></div>
               </div>
             </div>
 
             <div className="flex gap-2">
-              <input type="number" className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 w-1/2 text-sm focus:border-primary focus:outline-none" placeholder='Peso (g)' value={newItemWeight} onChange={e => setNewItemWeight(e.target.value)} />
-              <input type="number" className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 w-1/2 text-sm focus:border-primary focus:outline-none" placeholder='Preço (1kg)' value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} />
+              <input type="number" className="bg-[#f0f0f0] border-2 border-[#ccc] p-2 text-bgDark w-1/2 text-sm focus:border-primary focus:outline-none font-pixel text-lg" placeholder='Peso (g)' value={newItemWeight} onChange={e => setNewItemWeight(e.target.value)} />
+              <input type="number" className="bg-[#f0f0f0] border-2 border-[#ccc] p-2 text-bgDark w-1/2 text-sm focus:border-primary focus:outline-none font-pixel text-lg" placeholder='Preço' value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} />
             </div>
             
-            <button onClick={submitStock} className="bg-primary hover:bg-emerald-700 text-white py-3 rounded-xl font-bold mt-2 text-sm uppercase tracking-wide shadow-lg shadow-emerald-200 transition-all active:scale-95">
-              Adicionar ao Estoque
+            <button onClick={submitStock} className="retro-btn bg-primary text-white py-3 mt-2 text-sm font-pixel uppercase border-2 border-bgDark shadow-[2px_2px_0_#004d24]">
+              Guardar na Mochila
             </button>
         </div>
       </div>
