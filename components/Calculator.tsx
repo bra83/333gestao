@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Settings, StockItem } from '../types';
 
@@ -40,29 +41,35 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     const filament = stock[selectedFilamentIdx];
     if (!filament) return;
 
+    // Safety checks for settings to avoid Infinity
+    const safeKwh = settings.kwh || 0.95;
+    const safeVidaUtil = (settings.vidaUtilHoras && settings.vidaUtilHoras > 0) ? settings.vidaUtilHoras : 8000;
+    const safeHorasTrab = (settings.horasTrab && settings.horasTrab > 0) ? settings.horasTrab : 160;
+    const safeEficiencia = (settings.eficienciaFonte && settings.eficienciaFonte > 0) ? settings.eficienciaFonte : 0.9;
+    const safePrecoMaq = settings.precoMaq || 3500;
+    const safeValorHora = settings.valorHoraTrabalho || 20;
+
     const materialBase = (weight / 1000) * filament.preco;
     const materialLoss = materialBase * ((settings.perdaMaterial || 5) / 100);
     const materialTotal = materialBase + materialLoss;
 
     const powerKW = (settings.potencia / 1000);
-    const efficiency = settings.eficienciaFonte || 0.9;
-    const energyConsumption = (powerKW * hours) / efficiency;
-    const energyTotal = energyConsumption * settings.kwh;
+    const energyConsumption = (powerKW * hours) / safeEficiencia;
+    const energyTotal = energyConsumption * safeKwh;
 
-    const depreciationPerHour = settings.precoMaq / (settings.vidaUtilHoras || 8000);
-    const maintenancePerHour = (settings.manutencaoMensal || 20) / settings.horasTrab;
+    const depreciationPerHour = safePrecoMaq / safeVidaUtil;
+    const maintenancePerHour = (settings.manutencaoMensal || 20) / safeHorasTrab;
     const machineTotal = (depreciationPerHour + maintenancePerHour) * hours;
 
-    const laborHourlyRate = settings.valorHoraTrabalho || 20;
     const totalLaborMinutes = mode === 'advanced' 
       ? (prepTime + postTime + (settings.tempoAtendimento || 10))
       : 0; 
-    const laborTotal = (totalLaborMinutes / 60) * laborHourlyRate;
+    const laborTotal = (totalLaborMinutes / 60) * safeValorHora;
 
     const totalMonthlyFixed = 
       settings.aluguel + settings.mei + settings.softwares + 
       settings.ecommerce + settings.publicidade + settings.condominio;
-    const fixedCostPerHour = totalMonthlyFixed / settings.horasTrab;
+    const fixedCostPerHour = totalMonthlyFixed / safeHorasTrab;
     const fixedTotal = fixedCostPerHour * hours;
 
     let paintCost = 0;
@@ -78,12 +85,23 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     
     const totalCost = subtotal + riskValue;
     
-    const finalPrice = totalCost * settings.markup;
+    const finalPrice = totalCost * (settings.markup || 3);
     const profit = finalPrice - totalCost;
 
+    const safeNum = (n: number) => (isFinite(n) && !isNaN(n)) ? n : 0;
+
     setCosts({
-      materialTotal, energyTotal, machineTotal, laborTotal, fixedTotal, 
-      servicesTotal, subtotal, riskValue, totalCost, finalPrice, profit
+      materialTotal: safeNum(materialTotal),
+      energyTotal: safeNum(energyTotal),
+      machineTotal: safeNum(machineTotal),
+      laborTotal: safeNum(laborTotal),
+      fixedTotal: safeNum(fixedTotal),
+      servicesTotal: safeNum(servicesTotal),
+      subtotal: safeNum(subtotal),
+      riskValue: safeNum(riskValue),
+      totalCost: safeNum(totalCost),
+      finalPrice: safeNum(finalPrice),
+      profit: safeNum(profit)
     });
 
   }, [weight, hours, paintingType, selectedFilamentIdx, settings, stock, mode, prepTime, postTime, failRate]);
