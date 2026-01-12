@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v22-fix';
+const CACHE_NAME = '3d-erp-v23-final';
 const urlsToCache = [
   './',
   './index.html',
@@ -29,9 +29,10 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Estratégia Network-First para evitar ficar preso em cache velho durante debug
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });
