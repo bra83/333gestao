@@ -1,10 +1,10 @@
 {
   "name": "3D Print ERP",
   "short_name": "3D Print",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#ecfdf5",
+  "theme_color": "#059669",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg",

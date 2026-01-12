@@ -6,7 +6,8 @@
     <title>3D Print ERP</title>
     <meta name="theme-color" content="#ecfdf5" />
     <meta name="description" content="Dashboard de controle para impressão 3D" />
-    <link rel="manifest" href="/manifest.json" />
+    <!-- Caminho relativo para o manifest -->
+    <link rel="manifest" href="./manifest.json" />
     
     <!-- Google Fonts: Nunito (Rounded/Gordinha) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,10 +68,14 @@
 </head>
   <body>
     <div id="root"></div>
+    <!-- Script de Entrada do App (IMPORTANTE) -->
+    <script type="module" src="./index.tsx"></script>
+    
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          // Caminho relativo para o Service Worker
+          navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('SW registered'))
             .catch(err => console.log('SW failed', err));
         });
