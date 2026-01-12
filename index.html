@@ -127,6 +127,7 @@
                   if (installingWorker.state === 'installed') {
                     if (navigator.serviceWorker.controller) {
                       console.log('Nova atualização disponível!');
+                      // Opcional: window.location.reload();
                     }
                   }
                 };
