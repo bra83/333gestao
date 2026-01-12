@@ -38,67 +38,41 @@ const App: React.FC = () => {
     setLoading(true);
     setLastError(null);
     try {
-      const fetchOptions: RequestInit = {
-        method: 'GET',
-        credentials: 'omit',
-        redirect: 'follow',
-      };
-
-      const timestamp = new Date().getTime();
-      const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${timestamp}`, fetchOptions);
-      if (!settingsRes.ok) throw new Error(`Settings HTTP Error: ${settingsRes.status}`);
-      
-      const contentType = settingsRes.headers.get('content-type');
-      if (!contentType || !contentType.includes('json')) {
-        console.warn("Response Content-Type:", contentType);
-        throw new Error('A resposta não é JSON. Verifique se o script está publicado como "Web App" para "Qualquer pessoa" (Anyone).');
-      }
-
+      // READ_SETTINGS
+      const ts = new Date().getTime();
+      const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
+      if (!settingsRes.ok) throw new Error(`HTTP Error: ${settingsRes.status}`);
       const settingsJson = await settingsRes.json();
       setSettings(settingsJson);
 
-      const dataRes = await fetch(`${targetUrl}?type=read_data&t=${timestamp}`, fetchOptions);
-      if (!dataRes.ok) throw new Error(`Data HTTP Error: ${dataRes.status}`);
+      // READ_DATA
+      const dataRes = await fetch(`${targetUrl}?type=read_data&t=${ts}`);
+      if (!dataRes.ok) throw new Error(`HTTP Error: ${dataRes.status}`);
       const dataJson = await dataRes.json();
 
-      const sanitizedStock = (dataJson.estoque || []).map((item: any, i: number) => ({
+      // Sanitização de IDs
+      const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({
         ...item,
-        id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `temp-st-${timestamp}-${i}`,
-        peso: Number(item.peso) || 0,
-        preco: Number(item.preco) || 0
+        id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `${prefix}-${ts}-${i}`,
+        peso: Number(item.peso)||0,
+        preco: Number(item.preco)||0,
+        venda: Number(item.venda)||0,
+        lucro: Number(item.lucro)||0,
+        valor: Number(item.valor)||0
       }));
-
-      const sanitizedSales = (dataJson.vendas || []).map((item: any, i: number) => ({
-        ...item,
-        id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `temp-sale-${timestamp}-${i}`,
-        venda: Number(item.venda) || 0,
-        lucro: Number(item.lucro) || 0,
-        peso: Number(item.peso) || 0
-      }));
-
-      const sanitizedExpenses = (dataJson.gastos || []).map((item: any, i: number) => ({
-        ...item,
-        id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `temp-exp-${timestamp}-${i}`,
-        valor: Number(item.valor) || 0
-      }));
-
-      setData({
-        estoque: sanitizedStock,
-        vendas: sanitizedSales,
-        gastos: sanitizedExpenses
-      });
       
+      setData({ 
+        estoque: fixId(dataJson.estoque, 'st'),
+        vendas: fixId(dataJson.vendas, 've'),
+        gastos: fixId(dataJson.gastos, 'ga')
+      });
       showToast('Dados sincronizados!');
 
     } catch (err: any) {
       console.error('API Error:', err);
-      const msg = err.message === 'Failed to fetch' 
-        ? 'Erro de conexão (CORS/Rede). Usando dados offline.' 
-        : `Erro: ${err.message}`;
-      setLastError(msg);
-      showToast(msg);
+      setLastError('Erro ao conectar. Usando dados locais. Verifique se o script está publicado como "Anyone".');
+      showToast('Erro de conexão. Modo Offline.');
       setData(MOCK_DATA);
-      setSettings(DEFAULT_SETTINGS);
     } finally {
       setLoading(false);
     }
@@ -108,16 +82,18 @@ const App: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  // API Call unificada usando POST para garantir que parâmetros complexos passem
   const apiCall = async (params: URLSearchParams) => {
     if(!apiUrl) return;
-    try { 
+    try {
+      // Adicionamos os parâmetros na URL mesmo sendo POST para facilitar leitura no Apps Script
+      // e usamos no-cors para evitar preflight complexo
       await fetch(`${apiUrl}?${params.toString()}`, { 
         method: 'POST', 
-        mode: 'no-cors', 
-        credentials: 'omit' 
-      }); 
-    } catch(e) { 
-      console.error(e); 
+        mode: 'no-cors'
+      });
+    } catch(e) {
+      console.error("API POST Error", e);
     }
   };
 
@@ -126,86 +102,83 @@ const App: React.FC = () => {
     if (apiUrl) {
       setLoading(true);
       const params = new URLSearchParams({ type: 'save_settings' });
-      Object.entries(newSettings).forEach(([key, val]) => {
-        params.append(key, val.toString());
-      });
+      Object.entries(newSettings).forEach(([key, val]) => params.append(key, val.toString()));
       await apiCall(params);
-      showToast('Configurações salvas!');
       setLoading(false);
-    } else {
-      showToast('Salvo localmente (Demo)');
+      showToast('Configurações salvas!');
     }
   };
 
+  // --- ESTOQUE ---
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
     const id = Date.now().toString();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
     
-    if (apiUrl) {
-      const params = new URLSearchParams({ 
-        type: 'estoque', action: 'create', id, nome, marca, 
-        peso: peso.toString(), preco: preco.toString(), cor, tipo
-      });
-      apiCall(params);
-    }
+    const params = new URLSearchParams({ 
+      type: 'estoque', action: 'create', id, nome, marca, 
+      peso: peso.toString(), preco: preco.toString(), cor, tipo
+    });
+    apiCall(params);
     showToast('Filamento adicionado!');
   };
 
   const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
+    // Atualiza estado local
     setData(prev => ({
       ...prev,
       estoque: prev.estoque.map(item => item.id === id ? { ...item, ...updates } : item)
     }));
     
-    if (apiUrl) {
-      const currentItem = data.estoque.find(i => i.id === id);
-      const finalItem = { ...currentItem, ...updates };
-      const params = new URLSearchParams({
-        type: 'estoque', action: 'update', id,
-        nome: finalItem.nome || '', marca: finalItem.marca || '',
-        peso: (finalItem.peso || 0).toString(), preco: (finalItem.preco || 0).toString(),
-        cor: finalItem.cor || '', tipo: finalItem.tipo || ''
-      });
-      apiCall(params);
-    }
+    // Busca item atualizado para enviar completo ou parcial
+    const currentItem = data.estoque.find(i => i.id === id);
+    if (!currentItem) return;
+    
+    const finalItem = { ...currentItem, ...updates };
+
+    const params = new URLSearchParams({
+      type: 'estoque', action: 'update', id,
+      nome: finalItem.nome || '', marca: finalItem.marca || '',
+      peso: (finalItem.peso || 0).toString(), preco: (finalItem.preco || 0).toString(),
+      cor: finalItem.cor || '', tipo: finalItem.tipo || ''
+    });
+    apiCall(params);
+    showToast('Estoque atualizado!');
   };
 
   const handleDeleteStock = async (id: string) => {
-    if (!window.confirm("Tem certeza que deseja remover este filamento?")) return;
+    if (!window.confirm("Tem certeza?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
-    if (apiUrl) {
-      const params = new URLSearchParams({ type: 'estoque', action: 'delete', id });
-      apiCall(params);
-    }
+    apiCall(new URLSearchParams({ type: 'estoque', action: 'delete', id }));
     showToast('Filamento removido!');
   };
 
+  // --- VENDAS (COM DEDUÇÃO DE ESTOQUE) ---
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
     const id = Date.now().toString();
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
     
-    // 1. Adiciona Venda
+    // 1. Registra Venda Local
     setData(prev => ({ ...prev, vendas: [newSale, ...prev.vendas] }));
     
-    // 2. Desconta do Estoque (Se houver ID)
+    // 2. Desconta do Estoque (Se ID fornecido)
     if (stockId) {
-      const stockItem = data.estoque.find(s => s.id === stockId);
-      if (stockItem) {
-         const newWeight = Math.max(0, stockItem.peso - peso);
-         // Atualiza visualmente e na API
-         handleUpdateStock(stockId, { peso: newWeight });
-         showToast(`Estoque descontado: ${newWeight}g restantes`);
-      }
+       const stockItem = data.estoque.find(s => s.id === stockId);
+       if (stockItem) {
+          const newWeight = Math.max(0, stockItem.peso - peso);
+          // Chama função que já atualiza local e remoto do estoque
+          handleUpdateStock(stockId, { peso: newWeight });
+          showToast(`Estoque descontado: -${peso}g`);
+       }
     }
 
-    if (apiUrl) {
-      const params = new URLSearchParams({ 
-        type: 'venda', action: 'create', id, item, material, peso: peso.toString(),
-        venda: venda.toFixed(2), lucro: lucro.toFixed(2) 
-      });
-      apiCall(params);
-    }
+    // 3. Registra Venda Remota
+    const params = new URLSearchParams({ 
+      type: 'venda', action: 'create', id, item, material, peso: peso.toString(),
+      venda: venda.toFixed(2), lucro: lucro.toFixed(2) 
+    });
+    apiCall(params);
+    
     showToast('Venda registrada!');
     setView(ViewState.TRANSACTIONS);
   };
@@ -215,39 +188,35 @@ const App: React.FC = () => {
       ...prev,
       vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: newVal, lucro: newProfit } : s)
     }));
-    if (apiUrl) {
-      const sale = data.vendas.find(s => s.id === id);
-      if (sale) {
-         const params = new URLSearchParams({ 
-          type: 'venda', action: 'update', id, data: sale.data, item: sale.item, 
-          material: sale.material, peso: sale.peso.toString(),
-          venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) 
-        });
-        apiCall(params);
-      }
+    const sale = data.vendas.find(s => s.id === id);
+    if (sale) {
+       const params = new URLSearchParams({ 
+        type: 'venda', action: 'update', id, data: sale.data, item: sale.item, 
+        material: sale.material, peso: sale.peso.toString(),
+        venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) 
+      });
+      apiCall(params);
     }
     showToast('Venda atualizada!');
   };
 
   const handleDeleteSale = async (id: string) => {
+    if(!window.confirm("Apagar venda?")) return;
     setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
-    if (apiUrl) {
-        const params = new URLSearchParams({ type: 'venda', action: 'delete', id });
-        apiCall(params);
-    }
+    apiCall(new URLSearchParams({ type: 'venda', action: 'delete', id }));
     showToast('Venda removida!');
   };
 
+  // --- GASTOS ---
   const handleAddExpense = async (descricao: string, valor: number, dataStr: string) => {
     const id = Date.now().toString();
     const newExpense: Expense = { id, descricao, valor, data: dataStr };
     setData(prev => ({ ...prev, gastos: [newExpense, ...prev.gastos] }));
-    if (apiUrl) {
-      const params = new URLSearchParams({
-        type: 'gasto', action: 'create', id, data: dataStr, descricao, valor: valor.toString()
-      });
-      apiCall(params);
-    }
+    
+    const params = new URLSearchParams({
+      type: 'gasto', action: 'create', id, data: dataStr, descricao, valor: valor.toString()
+    });
+    apiCall(params);
     showToast('Gasto registrado!');
   };
 
@@ -256,24 +225,20 @@ const App: React.FC = () => {
       ...prev,
       gastos: prev.gastos.map(g => g.id === id ? { ...g, descricao, valor } : g)
     }));
-    if (apiUrl) {
-      const exp = data.gastos.find(g => g.id === id);
-      if (exp) {
-        const params = new URLSearchParams({
-          type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString()
-        });
-        apiCall(params);
-      }
+    const exp = data.gastos.find(g => g.id === id);
+    if (exp) {
+      const params = new URLSearchParams({
+        type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString()
+      });
+      apiCall(params);
     }
     showToast('Gasto atualizado!');
   };
 
   const handleDeleteExpense = async (id: string) => {
+    if(!window.confirm("Apagar gasto?")) return;
     setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
-    if (apiUrl) {
-      const params = new URLSearchParams({ type: 'gasto', action: 'delete', id });
-      apiCall(params);
-    }
+    apiCall(new URLSearchParams({ type: 'gasto', action: 'delete', id }));
     showToast('Gasto removido!');
   };
 
