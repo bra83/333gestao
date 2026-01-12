@@ -95,7 +95,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     const materialName = filament.marca ? `${filament.nome} (${filament.marca})` : filament.nome;
     
     if (window.confirm(`Registrar venda de "${itemName}" por R$ ${costs.finalPrice.toFixed(2)}?`)) {
-      // Aqui passamos o ID do filamento para o App poder descontar
+      // Passa o ID para dedução
       onSaveSale(itemName, materialName, weight, costs.finalPrice, costs.profit, filament.id);
       
       setItemName('');
