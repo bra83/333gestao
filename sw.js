@@ -1,11 +1,10 @@
-const CACHE_NAME = '3d-erp-v12'; // Atualizado para v12
+const CACHE_NAME = '3d-erp-v13'; // Atualizado para v13 para limpar o erro
 const urlsToCache = [
   './',
   './index.html',
-  './index.tsx',
   './manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://unpkg.com/@babel/standalone/babel.min.js'
+  'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap'
 ];
 
 self.addEventListener('install', event => {
