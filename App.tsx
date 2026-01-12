@@ -36,10 +36,10 @@ const App: React.FC = () => {
     }
 
     setLoading(true);
-    setLastError(null);
     try {
-      // READ_SETTINGS
       const ts = new Date().getTime();
+      
+      // READ_SETTINGS
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
       if (!settingsRes.ok) throw new Error(`HTTP Error: ${settingsRes.status}`);
       const settingsJson = await settingsRes.json();
@@ -50,7 +50,6 @@ const App: React.FC = () => {
       if (!dataRes.ok) throw new Error(`HTTP Error: ${dataRes.status}`);
       const dataJson = await dataRes.json();
 
-      // Sanitização de IDs
       const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({
         ...item,
         id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `${prefix}-${ts}-${i}`,
@@ -66,13 +65,13 @@ const App: React.FC = () => {
         vendas: fixId(dataJson.vendas, 've'),
         gastos: fixId(dataJson.gastos, 'ga')
       });
-      showToast('Dados sincronizados!');
+      showToast('Sincronizado!');
 
     } catch (err: any) {
       console.error('API Error:', err);
-      setLastError('Erro ao conectar. Usando dados locais. Verifique se o script está publicado como "Anyone".');
-      showToast('Erro de conexão. Modo Offline.');
-      setData(MOCK_DATA);
+      setLastError('Erro de conexão. Verifique o Apps Script.');
+      showToast('Modo Offline');
+      if (data.estoque.length === 0) setData(MOCK_DATA); // Fallback apenas se vazio
     } finally {
       setLoading(false);
     }
@@ -82,12 +81,10 @@ const App: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // API Call unificada usando POST para garantir que parâmetros complexos passem
+  // Função genérica de API
   const apiCall = async (params: URLSearchParams) => {
     if(!apiUrl) return;
     try {
-      // Adicionamos os parâmetros na URL mesmo sendo POST para facilitar leitura no Apps Script
-      // e usamos no-cors para evitar preflight complexo
       await fetch(`${apiUrl}?${params.toString()}`, { 
         method: 'POST', 
         mode: 'no-cors'
@@ -113,6 +110,8 @@ const App: React.FC = () => {
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
     const id = Date.now().toString();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
+    
+    // Atualiza localmente
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
     
     const params = new URLSearchParams({ 
@@ -124,16 +123,15 @@ const App: React.FC = () => {
   };
 
   const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
-    // Atualiza estado local
+    // Atualiza localmente com fusão
     setData(prev => ({
       ...prev,
       estoque: prev.estoque.map(item => item.id === id ? { ...item, ...updates } : item)
     }));
     
-    // Busca item atualizado para enviar completo ou parcial
+    // Pega o item atualizado do estado (ou simula a fusão para enviar)
     const currentItem = data.estoque.find(i => i.id === id);
     if (!currentItem) return;
-    
     const finalItem = { ...currentItem, ...updates };
 
     const params = new URLSearchParams({
@@ -147,39 +145,40 @@ const App: React.FC = () => {
   };
 
   const handleDeleteStock = async (id: string) => {
-    if (!window.confirm("Tem certeza?")) return;
+    if (!window.confirm("Apagar este carretel?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
     apiCall(new URLSearchParams({ type: 'estoque', action: 'delete', id }));
-    showToast('Filamento removido!');
+    showToast('Removido!');
   };
 
-  // --- VENDAS (COM DEDUÇÃO DE ESTOQUE) ---
+  // --- VENDAS ---
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
     const id = Date.now().toString();
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
     
-    // 1. Registra Venda Local
+    // 1. Adiciona Venda Local
     setData(prev => ({ ...prev, vendas: [newSale, ...prev.vendas] }));
     
-    // 2. Desconta do Estoque (Se ID fornecido)
+    // 2. Desconta Estoque (Local + Remoto)
     if (stockId) {
        const stockItem = data.estoque.find(s => s.id === stockId);
        if (stockItem) {
           const newWeight = Math.max(0, stockItem.peso - peso);
-          // Chama função que já atualiza local e remoto do estoque
           handleUpdateStock(stockId, { peso: newWeight });
           showToast(`Estoque descontado: -${peso}g`);
+       } else {
+         console.warn("Stock Item ID not found:", stockId);
        }
     }
 
-    // 3. Registra Venda Remota
+    // 3. Envia Venda
     const params = new URLSearchParams({ 
       type: 'venda', action: 'create', id, item, material, peso: peso.toString(),
       venda: venda.toFixed(2), lucro: lucro.toFixed(2) 
     });
     apiCall(params);
     
-    showToast('Venda registrada!');
+    showToast('Venda Registrada!');
     setView(ViewState.TRANSACTIONS);
   };
 
@@ -188,6 +187,7 @@ const App: React.FC = () => {
       ...prev,
       vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: newVal, lucro: newProfit } : s)
     }));
+    
     const sale = data.vendas.find(s => s.id === id);
     if (sale) {
        const params = new URLSearchParams({ 
@@ -201,16 +201,18 @@ const App: React.FC = () => {
   };
 
   const handleDeleteSale = async (id: string) => {
-    if(!window.confirm("Apagar venda?")) return;
+    // Remove local
     setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
+    // Envia comando
     apiCall(new URLSearchParams({ type: 'venda', action: 'delete', id }));
-    showToast('Venda removida!');
+    showToast('Venda apagada!');
   };
 
   // --- GASTOS ---
   const handleAddExpense = async (descricao: string, valor: number, dataStr: string) => {
     const id = Date.now().toString();
     const newExpense: Expense = { id, descricao, valor, data: dataStr };
+    
     setData(prev => ({ ...prev, gastos: [newExpense, ...prev.gastos] }));
     
     const params = new URLSearchParams({
@@ -225,6 +227,7 @@ const App: React.FC = () => {
       ...prev,
       gastos: prev.gastos.map(g => g.id === id ? { ...g, descricao, valor } : g)
     }));
+    
     const exp = data.gastos.find(g => g.id === id);
     if (exp) {
       const params = new URLSearchParams({
@@ -236,7 +239,6 @@ const App: React.FC = () => {
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if(!window.confirm("Apagar gasto?")) return;
     setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
     apiCall(new URLSearchParams({ type: 'gasto', action: 'delete', id }));
     showToast('Gasto removido!');
@@ -247,6 +249,7 @@ const App: React.FC = () => {
     localStorage.setItem('APPS_SCRIPT_URL', val);
   };
 
+  // Navigation Icons
   const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
   const IconCalc = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>;
   const IconBox = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
@@ -268,7 +271,7 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-emerald-100 p-4 z-20 flex justify-between items-center shadow-sm">
         <div className="flex items-center gap-2">
-          {/* LOGO 333 - GORDINHO E ENCOSTADO */}
+          {/* LOGO 333 */}
           <div className="flex items-center -space-x-1.5 select-none">
             <span className="text-4xl font-black text-primary tracking-tighter">3</span>
             <span className="text-4xl font-black text-emerald-300 tracking-tighter z-10">3</span>
