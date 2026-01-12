@@ -28,7 +28,7 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // LEITURA (GET) - Mantém igual, pois estava funcionando
+  // LEITURA (GET)
   const fetchData = useCallback(async () => {
     const targetUrl = apiUrl ? apiUrl.trim() : '';
     if (!targetUrl) {
@@ -49,6 +49,8 @@ const App: React.FC = () => {
 
       const fixId = (arr: any[], prefix: string) => (arr || []).map((item: any, i: number) => ({
         ...item,
+        // Se o ID vier vazio ou não for string, gera um provisório. 
+        // Importante: O script backend agora garante IDs reais, então isso deve diminuir.
         id: (item.id && String(item.id).trim().length > 0) ? String(item.id) : `${prefix}-${ts}-${i}`,
         peso: Number(item.peso)||0,
         preco: Number(item.preco)||0,
@@ -76,19 +78,15 @@ const App: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ESCRITA (POST via FormData) - O pulo do gato para o Delete funcionar
+  // ESCRITA (POST via FormData)
   const apiCall = async (payload: any) => {
     if(!apiUrl) return;
     try {
-      // Converte o objeto JSON em FormData. 
-      // O Google Apps Script trata FormData nativamente como e.parameter, 
-      // o que evita erros de parsing e CORS.
       const formData = new FormData();
       Object.keys(payload).forEach(key => {
         formData.append(key, String(payload[key]));
       });
 
-      // Envia como POST sem headers complexos
       await fetch(apiUrl, {
         method: 'POST',
         body: formData
@@ -107,6 +105,16 @@ const App: React.FC = () => {
       setLoading(false);
       showToast('Configurações salvas!');
     }
+  };
+
+  // Função especial para consertar planilha
+  const handleMaintenance = async () => {
+    if (!window.confirm("Isso tentará corrigir as colunas e IDs da sua planilha. Continuar?")) return;
+    setLoading(true);
+    await apiCall({ type: 'maintenance' });
+    setTimeout(() => {
+        fetchData(); // Recarrega dados após manutenção
+    }, 2000);
   };
 
   const executeDelete = async (type: string, id: string) => {
@@ -219,7 +227,7 @@ const App: React.FC = () => {
         {view === ViewState.CALCULATOR && <Calculator settings={settings} stock={data.estoque} onSaveSale={handleAddSale} />}
         {view === ViewState.INVENTORY && <InventoryView stock={data.estoque} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} />}
         {view === ViewState.TRANSACTIONS && <TransactionsView sales={data.vendas} expenses={data.gastos} onUpdateSale={handleUpdateSale} onDeleteSale={handleDeleteSale} onAddExpense={handleAddExpense} onUpdateExpense={handleUpdateExpense} onDeleteExpense={handleDeleteExpense} />}
-        {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={handleSaveSettings} apiUrl={apiUrl} onUrlChange={handleUrlChange} lastError={lastError} onRetry={fetchData} />}
+        {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={handleSaveSettings} apiUrl={apiUrl} onUrlChange={handleUrlChange} lastError={lastError} onRetry={fetchData} onMaintenance={handleMaintenance} />}
       </main>
 
       <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur border-t border-emerald-100 pb-safe z-30 shadow-sm">
