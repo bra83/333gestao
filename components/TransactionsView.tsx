@@ -38,7 +38,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   // Helper de Formatação Segura
   const fmtMoney = (val: number) => {
     if (!isFinite(val) || isNaN(val)) return "R$ 0,00";
-    if (Math.abs(val) > 100000) return "R$ ???"; // Evita estouro de layout
+    // Valor já corrigido no App.tsx, então podemos mostrar livremente
     return `R$ ${val.toFixed(2)}`;
   };
 
