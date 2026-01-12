@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v12.0-ui-upgrade';
+const CACHE_NAME = '3d-erp-v13.0-retro-snes';
 const assets = [
   './',
   './index.html',
