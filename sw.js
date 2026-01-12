@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v25-final';
+const CACHE_NAME = '3d-erp-v26-fix';
 const assets = [
   './',
   './index.html',
@@ -23,6 +23,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Estratégia Network-First para garantir atualizações
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );

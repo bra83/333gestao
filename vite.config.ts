@@ -1,24 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-
-// Define __dirname in ESM
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 export default defineConfig({
   plugins: [react()],
   base: './',
   build: {
     outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: './index.html',
       },
     },
   },
-  // Garante que o sw.js e manifest.json sejam tratados como assets se estiverem na raiz
-  publicDir: './', 
+  // Define que arquivos na raiz (como sw.js e manifest.json) devem ser copiados
+  publicDir: false, 
+  // Alternativa manual: o build do Vite por padrão inclui o que está no index.html.
+  // Como sw.js e manifest são referenciados no HTML, eles serão processados.
 })
