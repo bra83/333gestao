@@ -108,6 +108,19 @@ const App: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  const apiCall = async (params: URLSearchParams) => {
+    if(!apiUrl) return;
+    try { 
+      await fetch(`${apiUrl}?${params.toString()}`, { 
+        method: 'POST', 
+        mode: 'no-cors', 
+        credentials: 'omit' 
+      }); 
+    } catch(e) { 
+      console.error(e); 
+    }
+  };
+
   const handleSaveSettings = async (newSettings: Settings) => {
     setSettings(newSettings);
     if (apiUrl) {
@@ -116,13 +129,8 @@ const App: React.FC = () => {
       Object.entries(newSettings).forEach(([key, val]) => {
         params.append(key, val.toString());
       });
-      try {
-        await fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }); 
-        showToast('Configurações salvas!');
-      } catch(e) { 
-        console.error(e);
-        showToast('Erro ao salvar no servidor'); 
-      }
+      await apiCall(params);
+      showToast('Configurações salvas!');
       setLoading(false);
     } else {
       showToast('Salvo localmente (Demo)');
@@ -133,12 +141,13 @@ const App: React.FC = () => {
     const id = Date.now().toString();
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
+    
     if (apiUrl) {
       const params = new URLSearchParams({ 
         type: 'estoque', action: 'create', id, nome, marca, 
         peso: peso.toString(), preco: preco.toString(), cor, tipo
       });
-      fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync'));
+      apiCall(params);
     }
     showToast('Filamento adicionado!');
   };
@@ -148,6 +157,7 @@ const App: React.FC = () => {
       ...prev,
       estoque: prev.estoque.map(item => item.id === id ? { ...item, ...updates } : item)
     }));
+    
     if (apiUrl) {
       const currentItem = data.estoque.find(i => i.id === id);
       const finalItem = { ...currentItem, ...updates };
@@ -157,7 +167,7 @@ const App: React.FC = () => {
         peso: (finalItem.peso || 0).toString(), preco: (finalItem.preco || 0).toString(),
         cor: finalItem.cor || '', tipo: finalItem.tipo || ''
       });
-      fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync update'));
+      apiCall(params);
     }
   };
 
@@ -165,28 +175,28 @@ const App: React.FC = () => {
     if (!window.confirm("Tem certeza que deseja remover este filamento?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
     if (apiUrl) {
-      // CLEAN DELETE
       const params = new URLSearchParams({ type: 'estoque', action: 'delete', id });
-      fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync delete'));
+      apiCall(params);
     }
     showToast('Filamento removido!');
   };
 
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
-    // 1. Criar a venda
     const id = Date.now().toString();
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
+    
+    // 1. Adiciona Venda
     setData(prev => ({ ...prev, vendas: [newSale, ...prev.vendas] }));
     
-    // 2. Descontar do Estoque (Se um ID de estoque foi fornecido)
+    // 2. Desconta do Estoque (Se houver ID)
     if (stockId) {
-       const stockItem = data.estoque.find(s => s.id === stockId);
-       if (stockItem) {
-          const newWeight = Math.max(0, stockItem.peso - peso);
-          // Atualiza local e remoto
-          handleUpdateStock(stockId, { peso: newWeight });
-          showToast(`Estoque descontado! Restam ${newWeight}g`);
-       }
+      const stockItem = data.estoque.find(s => s.id === stockId);
+      if (stockItem) {
+         const newWeight = Math.max(0, stockItem.peso - peso);
+         // Atualiza visualmente e na API
+         handleUpdateStock(stockId, { peso: newWeight });
+         showToast(`Estoque descontado: ${newWeight}g restantes`);
+      }
     }
 
     if (apiUrl) {
@@ -194,7 +204,7 @@ const App: React.FC = () => {
         type: 'venda', action: 'create', id, item, material, peso: peso.toString(),
         venda: venda.toFixed(2), lucro: lucro.toFixed(2) 
       });
-      fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync'));
+      apiCall(params);
     }
     showToast('Venda registrada!');
     setView(ViewState.TRANSACTIONS);
@@ -213,7 +223,7 @@ const App: React.FC = () => {
           material: sale.material, peso: sale.peso.toString(),
           venda: newVal.toFixed(2), lucro: newProfit.toFixed(2) 
         });
-        fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync update'));
+        apiCall(params);
       }
     }
     showToast('Venda atualizada!');
@@ -222,9 +232,8 @@ const App: React.FC = () => {
   const handleDeleteSale = async (id: string) => {
     setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
     if (apiUrl) {
-        // CLEAN DELETE
         const params = new URLSearchParams({ type: 'venda', action: 'delete', id });
-        fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync delete'));
+        apiCall(params);
     }
     showToast('Venda removida!');
   };
@@ -237,7 +246,7 @@ const App: React.FC = () => {
       const params = new URLSearchParams({
         type: 'gasto', action: 'create', id, data: dataStr, descricao, valor: valor.toString()
       });
-      fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync gasto'));
+      apiCall(params);
     }
     showToast('Gasto registrado!');
   };
@@ -253,7 +262,7 @@ const App: React.FC = () => {
         const params = new URLSearchParams({
           type: 'gasto', action: 'update', id, data: exp.data, descricao, valor: valor.toString()
         });
-        fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync update gasto'));
+        apiCall(params);
       }
     }
     showToast('Gasto atualizado!');
@@ -262,9 +271,8 @@ const App: React.FC = () => {
   const handleDeleteExpense = async (id: string) => {
     setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
     if (apiUrl) {
-      // CLEAN DELETE
       const params = new URLSearchParams({ type: 'gasto', action: 'delete', id });
-      fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync delete gasto'));
+      apiCall(params);
     }
     showToast('Gasto removido!');
   };
