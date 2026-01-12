@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AppData, ViewState } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -11,74 +12,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ data, onNavigate }
   const totalSales = data.vendas.reduce((acc, curr) => acc + curr.venda, 0);
   const grossProfit = data.vendas.reduce((acc, curr) => acc + curr.lucro, 0);
   const totalExpenses = data.gastos.reduce((acc, curr) => acc + curr.valor, 0);
-  
-  // NET PROFIT = Gross Profit (from sales) - Expenses
   const netProfit = grossProfit - totalExpenses;
-  
   const recentSales = data.vendas.slice(0, 5).reverse();
 
   return (
     <div className="space-y-6 pb-20">
       
-      {/* Top Cards Grid */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-surface p-5 rounded-2xl border border-emerald-100 shadow-sm hover:shadow-md transition-shadow">
-          <span className="text-secondary text-xs font-bold uppercase tracking-wider">Faturamento</span>
-          <div className="text-2xl font-black text-slate-700 mt-1">R$ {totalSales.toFixed(2)}</div>
+        <div className="retro-box p-4 bg-white hover:-translate-y-1 transition-transform">
+          <span className="text-secondary text-xs font-pixel uppercase tracking-widest block mb-1">Total Gold</span>
+          <div className="text-2xl font-pixel text-secondary truncate">R$ {totalSales.toFixed(2)}</div>
         </div>
-        <div className="bg-surface p-5 rounded-2xl border border-red-100 shadow-sm hover:shadow-md transition-shadow">
-          <span className="text-red-400 text-xs font-bold uppercase tracking-wider">Gastos Totais</span>
-          <div className="text-2xl font-black text-red-500 mt-1">- R$ {totalExpenses.toFixed(2)}</div>
+        <div className="retro-box p-4 bg-white hover:-translate-y-1 transition-transform border-heart">
+          <span className="text-heart text-xs font-pixel uppercase tracking-widest block mb-1">Damage</span>
+          <div className="text-2xl font-pixel text-heart truncate">- R$ {totalExpenses.toFixed(2)}</div>
         </div>
       </div>
 
-      {/* Net Profit Highlight */}
-      <div className={`p-6 rounded-2xl shadow-md border transition-all ${netProfit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200' : 'bg-gradient-to-br from-red-50 to-white border-red-200'}`}>
-        <div className="flex justify-between items-center mb-1">
-           <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Lucro Líquido Real</span>
+      <div className={`retro-box p-6 transition-all ${netProfit >= 0 ? 'bg-primary/5 border-primary' : 'bg-heart/5 border-heart'}`}>
+        <div className="flex justify-between items-center mb-2">
+           <span className="text-secondary text-xs font-bold uppercase tracking-widest">Lucro Líquido</span>
            {netProfit >= 0 ? (
-             <span className="bg-emerald-100 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full">POSITIVO</span>
+             <span className="bg-primary text-white text-[10px] font-pixel px-2 py-1 uppercase">Level Up!</span>
            ) : (
-             <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">NEGATIVO</span>
+             <span className="bg-heart text-white text-[10px] font-pixel px-2 py-1 uppercase">Danger</span>
            )}
         </div>
-        <div className={`text-4xl font-black mt-1 ${netProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+        <div className={`text-5xl font-pixel mt-1 tracking-tighter ${netProfit >= 0 ? 'text-primary' : 'text-heart'}`}>
           R$ {netProfit.toFixed(2)}
         </div>
-        <p className="text-[10px] text-slate-400 mt-2">
-          (Lucro das Vendas - Despesas Operacionais)
+        <p className="text-[10px] text-secondary/60 mt-2 font-pixel uppercase">
+          (Vendas - Custos Operacionais)
         </p>
       </div>
 
-      {/* Chart */}
-      <div className="bg-surface p-5 rounded-2xl border border-emerald-100 shadow-sm h-64">
-          <h3 className="text-slate-700 mb-4 font-bold">Últimas Vendas</h3>
-          <ResponsiveContainer width="100%" height="100%">
+      <div className="retro-box p-4 h-64 bg-white">
+          <h3 className="text-secondary mb-4 font-pixel uppercase text-lg border-b-2 border-secondary/20 pb-1">Battle Log (Vendas)</h3>
+          <ResponsiveContainer width="100%" height="85%">
             <BarChart data={recentSales}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="item" tick={{fill: '#94a3b8', fontSize: 10}} interval={0} axisLine={false} tickLine={false} />
-              <YAxis tick={{fill: '#94a3b8', fontSize: 10}} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="0" stroke="#eee" vertical={false} />
+              <XAxis dataKey="item" tick={{fill: '#8b5a2b', fontSize: 10, fontFamily: 'VT323'}} interval={0} axisLine={false} tickLine={false} />
+              <YAxis tick={{fill: '#8b5a2b', fontSize: 12, fontFamily: 'VT323'}} axisLine={false} tickLine={false} />
               <Tooltip 
-                cursor={{fill: '#ecfdf5'}}
-                contentStyle={{backgroundColor: '#fff', borderColor: '#a7f3d0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#334155'}}
-                itemStyle={{color: '#10b981', fontWeight: 'bold'}}
+                cursor={{fill: '#fcf9ee'}}
+                contentStyle={{backgroundColor: '#fff', border: '2px solid #8b5a2b', borderRadius: '0', fontFamily: 'VT323', color: '#8b5a2b'}}
+                itemStyle={{color: '#009b48'}}
               />
-              <Bar dataKey="venda" fill="#10b981" radius={[6, 6, 6, 6]} barSize={20} />
+              <Bar dataKey="venda" fill="#009b48" radius={[2, 2, 0, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
       </div>
 
-      {/* Inventory CTA */}
-      <div className="bg-surface p-6 rounded-2xl border border-emerald-100 shadow-sm">
-        <h3 className="text-slate-700 mb-2 font-bold">Resumo do Estoque</h3>
-        <p className="text-secondary text-sm mb-5">
-          Você tem <strong className="text-primary">{data.estoque.length}</strong> rolos registrados.
+      <div className="retro-box p-5 bg-white">
+        <h3 className="text-secondary mb-2 font-pixel text-lg uppercase">Inventário</h3>
+        <p className="text-secondary text-sm mb-4">
+          <strong className="text-primary font-pixel text-xl">{data.estoque.length}</strong> itens na mochila.
         </p>
         <button 
           onClick={() => onNavigate(ViewState.INVENTORY)}
-          className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors"
+          className="retro-btn w-full bg-secondary text-bgPaper py-3 text-sm font-pixel uppercase border-2 border-bgDark shadow-[2px_2px_0_#292420]"
         >
-          Gerenciar Estoque
+          Abrir Mochila
         </button>
       </div>
     </div>
