@@ -1,4 +1,4 @@
-const CACHE_NAME = '3d-erp-v4'; // Atualizado para v4 para forçar atualização
+const CACHE_NAME = '3d-erp-v6'; // Atualizado para v6 para forçar atualização
 const urlsToCache = [
   './',
   './index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  // Limpa caches antigos (v1, v2, v3, etc)
+  // Limpa caches antigos
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -38,9 +38,7 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Retorna cache se existir, senão busca na rede
         return response || fetch(event.request).catch(() => {
-            // Fallback opcional se offline e sem cache
             return null;
         });
       })
