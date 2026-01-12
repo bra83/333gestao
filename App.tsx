@@ -166,6 +166,7 @@ const App: React.FC = () => {
     if (!window.confirm("Tem certeza que deseja remover este filamento?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(item => item.id !== id) }));
     if (apiUrl) {
+      // CLEAN DELETE: Só envia tipo, ação e ID
       const params = new URLSearchParams({ type: 'estoque', action: 'delete', id });
       fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync delete'));
     }
@@ -209,6 +210,7 @@ const App: React.FC = () => {
   const handleDeleteSale = async (id: string) => {
     setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
     if (apiUrl) {
+        // CLEAN DELETE: Só envia tipo, ação e ID
         const params = new URLSearchParams({ type: 'venda', action: 'delete', id });
         fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync delete'));
     }
@@ -248,6 +250,7 @@ const App: React.FC = () => {
   const handleDeleteExpense = async (id: string) => {
     setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
     if (apiUrl) {
+      // CLEAN DELETE: Só envia tipo, ação e ID
       const params = new URLSearchParams({ type: 'gasto', action: 'delete', id });
       fetch(`${apiUrl}?${params.toString()}`, { method: 'POST', mode: 'no-cors', credentials: 'omit' }).catch(() => showToast('Erro sync delete gasto'));
     }
