@@ -131,6 +131,7 @@ export const SpoolCard: React.FC<SpoolCardProps> = ({ item, onUpdate, onDelete }
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full border border-slate-200 z-10 flex items-center justify-center shadow-sm"></div>
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent to-white opacity-20 rounded-full pointer-events-none"></div>
       </div>
+      
 
       {/* Info */}
       <h3 className="text-slate-800 font-bold text-base text-center leading-tight mb-0 truncate w-full" title={item.nome}>
