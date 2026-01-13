@@ -13,6 +13,10 @@
     <title>3D Jewelry ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      // Configuração global para o App.tsx encontrar o link caso o localStorage esteja vazio
+      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXPnoUP0I_WT0cpeR1LEt9v-he0J1Emciun85QjS0umJzVEX2SS1n8eJivGNW_bNRhkA/exec"; 
+      
+      
       tailwind.config = {
         theme: {
           extend: {
@@ -56,12 +60,11 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- O Vite vai injetar o script corretamente aqui durante o build -->
-    <script type="module" src="/index.tsx"></script>
+    <!-- Caminho relativo para o arquivo de entrada para evitar 404 no Pages -->
+    <script type="module" src="index.tsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Registro usando caminho relativo para funcionar no subdiretório
           navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
         });
       }
