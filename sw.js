@@ -1,64 +1,45 @@
 
-const CACHE_NAME = '3d-erp-v14.0-production';
+const CACHE_NAME = '3d-erp-v15.0';
 
-// No GitHub Pages, o caminho pode não ser a raiz absoluta.
-// Usamos caminhos relativos para garantir compatibilidade.
 const assets = [
   './',
   './index.html',
   './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=VT323&display=swap'
+  'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets');
-      return cache.addAll(assets);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        if (key !== CACHE_NAME) {
-          console.log('[SW] Cleaning old cache', key);
-          return caches.delete(key);
-        }
-      })
-    )).then(() => self.clients.claim())
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    ))
   );
 });
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // Ignorar Google Scripts (sempre online)
-  if (url.hostname.includes('script.google.com')) return;
+  // REGRA CRÍTICA: Não usar cache para chamadas de API (Google Scripts)
+  if (url.hostname.includes('script.google.com') || url.search.includes('type=')) {
+    return event.respondWith(fetch(event.request));
+  }
 
-  // Estratégia: Stale-While-Revalidate
-  // Tenta servir do cache, mas atualiza em segundo plano
+  // Para arquivos estáticos, usa Cache-First
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      const fetchPromise = fetch(event.request).then(networkResponse => {
-        // Se a resposta for válida, atualiza o cache
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Se falhar offline
-        console.log('[SW] Offline fetch failed');
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request).then(fetchRes => {
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, fetchRes.clone());
+          return fetchRes;
+        });
       });
-
-      return cachedResponse || fetchPromise;
     })
   );
 });

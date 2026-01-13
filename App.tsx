@@ -12,17 +12,9 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewState>(ViewState.DASHBOARD);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [data, setData] = useState<AppData>({ estoque: [], vendas: [], gastos: [] });
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [apiUrl, setApiUrl] = useState<string>(() => localStorage.getItem('APPS_SCRIPT_URL') || (window as any).APPS_SCRIPT_URL || "");
   const [loading, setLoading] = useState<boolean>(false);
   const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-    });
-  }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -30,56 +22,92 @@ const App: React.FC = () => {
   };
 
   const fetchData = useCallback(async () => {
-    if (!apiUrl) { setData(MOCK_DATA); return; }
+    if (!apiUrl) { 
+      // Se não tem URL, usa mock mas não marca como carregado permanentemente
+      setData(MOCK_DATA); 
+      return; 
+    }
     setLoading(true);
     try {
       const ts = new Date().getTime();
+      // Buscamos configurações e dados com timestamp para furar qualquer cache de navegador/proxy
       const [sRes, dRes] = await Promise.all([
-        fetch(`${apiUrl}?type=read_settings&t=${ts}`),
-        fetch(`${apiUrl}?type=read_data&t=${ts}`)
+        fetch(`${apiUrl}?type=read_settings&nocache=${ts}`),
+        fetch(`${apiUrl}?type=read_data&nocache=${ts}`)
       ]);
-      if (sRes.ok) setSettings({ ...DEFAULT_SETTINGS, ...await sRes.json() });
+      
+      if (sRes.ok) {
+        const sJson = await sRes.json();
+        setSettings({ ...DEFAULT_SETTINGS, ...sJson });
+      }
+      
       if (dRes.ok) {
         const d = await dRes.json();
         setData({
-          estoque: (d.estoque || []).map((i: any) => ({ ...i, peso: Number(i.peso), preco: Number(i.preco) })),
+          estoque: (d.estoque || []).map((i: any) => ({ 
+            ...i, 
+            peso: Number(i.peso || 0), 
+            preco: Number(i.preco || 0),
+            cor: i.cor || '#3b82f6'
+          })),
           vendas: (d.vendas || []).map((i: any) => ({ ...i, venda: Number(i.venda), lucro: Number(i.lucro) })),
           gastos: (d.gastos || []).map((i: any) => ({ ...i, valor: Number(i.valor) }))
         });
       }
-    } catch (e) { setData(MOCK_DATA); } finally { setLoading(false); }
+    } catch (e) { 
+      console.error("Erro ao buscar dados:", e);
+      showToast("Erro ao conectar com a planilha");
+    } finally { 
+      setLoading(false); 
+    }
   }, [apiUrl]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { 
+    fetchData(); 
+  }, [fetchData]);
 
   const apiCall = async (payload: any) => {
     if (!apiUrl) return;
     const formData = new FormData();
-    Object.keys(payload).forEach(k => formData.append(k, String(payload[k] ?? "")));
+    // Garante que campos nulos ou indefinidos virem strings vazias para o Apps Script
+    Object.keys(payload).forEach(k => {
+      formData.append(k, payload[k] === undefined || payload[k] === null ? "" : String(payload[k]));
+    });
+    
     try { 
       const res = await fetch(apiUrl, { method: 'POST', body: formData });
       if (!res.ok) throw new Error("Sync Error");
-    } catch (e) { showToast("Erro ao Sincronizar"); }
+      return true;
+    } catch (e) { 
+      showToast("Falha na sincronização remota");
+      return false;
+    }
   };
 
-  const handleAddStock = async (n: any, m: any, p: any, pr: any, c: any, t: any) => {
-    const item = { id: "ST" + Date.now(), nome: n, marca: m, peso: p, preco: pr, cor: c, tipo: t };
+  const handleAddStock = async (n: string, m: string, p: number, pr: number, c: string, t: string) => {
+    const item: StockItem = { id: "ST" + Date.now(), nome: n, marca: m, peso: p, preco: pr, cor: c, tipo: t };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, item] }));
-    await apiCall({ type: 'estoque', action: 'create', ...item });
-    showToast("Gema lapidada!");
+    const success = await apiCall({ type: 'estoque', action: 'create', ...item });
+    if (success) showToast("Gema lapidada e salva!");
   };
 
-  const handleUpdateStock = async (id: string, up: any) => {
+  const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
     const currentItem = data.estoque.find(i => i.id === id);
     if (!currentItem) return;
-    const updatedItem = { ...currentItem, ...up };
+    const updatedItem = { ...currentItem, ...updates };
     
-    setData(prev => ({ ...prev, estoque: prev.estoque.map(i => i.id === id ? updatedItem : i) }));
+    // Atualiza local primeiro para interface rápida
+    setData(prev => ({ 
+      ...prev, 
+      estoque: prev.estoque.map(i => i.id === id ? updatedItem : i) 
+    }));
+    
+    // Sincroniza com a planilha
     await apiCall({ type: 'estoque', action: 'update', ...updatedItem });
   };
 
   const handleDeleteStock = async (id: string) => {
-    if (!confirm("Remover gema do cofre?")) return;
+    if (!confirm("Remover gema do cofre permanentemente?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(i => i.id !== id) }));
     await apiCall({ type: 'estoque', action: 'delete', id });
     showToast("Gema removida");
@@ -101,7 +129,9 @@ const App: React.FC = () => {
           </div>
           <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-amethyst-600 via-sapphire-500 to-emerald-600">3D JEWELRY</h1>
         </div>
-        {loading && <div className="w-5 h-5 border-3 border-slate-100 border-t-amethyst-500 rounded-full animate-spin"></div>}
+        <button onClick={fetchData} className={`p-2 rounded-full transition-all ${loading ? 'animate-spin' : 'active:scale-90'}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="3"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        </button>
       </header>
 
       <main className="p-5 max-w-2xl mx-auto">
@@ -115,12 +145,15 @@ const App: React.FC = () => {
           }
           await apiCall({ type: 'venda', action: 'create', ...s });
           setView(ViewState.TRANSACTIONS);
-          showToast("Venda de Ouro!");
+          showToast("Venda registrada!");
         }} />}
         {view === ViewState.INVENTORY && <InventoryView stock={data.estoque} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} />}
         {view === ViewState.TRANSACTIONS && <TransactionsView sales={data.vendas} expenses={data.gastos} onUpdateSale={(id, v, l) => {
-          setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: v, lucro: l } : s) }));
-          apiCall({ type: 'venda', action: 'update', id, venda: v, lucro: l });
+          const sale = data.vendas.find(s => s.id === id);
+          if (sale) {
+            setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: v, lucro: l } : s) }));
+            apiCall({ type: 'venda', action: 'update', id, venda: v, lucro: l });
+          }
         }} onDeleteSale={(id) => {
           setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
           apiCall({ type: 'venda', action: 'delete', id });
@@ -136,7 +169,9 @@ const App: React.FC = () => {
           await apiCall({ type: 'gasto', action: 'delete', id });
         }} />}
         {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={async (s) => {
-          setSettings(s); await apiCall({ type: 'save_settings', ...s }); showToast("Ajustes Salvos");
+          setSettings(s); 
+          await apiCall({ type: 'save_settings', ...s }); 
+          showToast("Ajustes Salvos");
         }} apiUrl={apiUrl} onUrlChange={(val) => { setApiUrl(val); localStorage.setItem('APPS_SCRIPT_URL', val); }} onRetry={fetchData} />}
       </main>
 
