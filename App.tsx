@@ -259,18 +259,17 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-bgBody text-textMain font-sans selection:bg-accent/20 selection:text-accent">
       
-      {/* HEADER MODERNO COM LOGO */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 z-40 flex justify-between items-center">
-        <div className="flex items-center gap-3">
+      {/* HEADER MODERNO COM LOGO AUMENTADA */}
+      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-3 z-40 flex justify-between items-center h-20">
+        <div className="flex items-center">
           <div className="relative group">
-            {/* LOGO DO GITHUB DO USUÁRIO */}
+            {/* LOGO DO GITHUB DO USUÁRIO AUMENTADA */}
             <img 
               src="https://raw.githubusercontent.com/bra83/333gestao/main/icon-512.png" 
               alt="Logo" 
-              className="w-10 h-10 rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-300"
+              className="w-16 h-16 rounded-2xl shadow-sm group-hover:scale-105 transition-transform duration-300"
             />
           </div>
-          <h1 className="text-xl font-extrabold text-primary tracking-tight">333 Gestão</h1>
         </div>
         
         <div className="flex items-center gap-3">
