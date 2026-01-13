@@ -14,6 +14,8 @@ export const SpoolCard: React.FC<SpoolCardProps> = ({ item, onUpdate, onDelete }
 
   const percentage = Math.min(100, (item.peso / 1000) * 100);
   const isLow = item.peso < 200;
+  
+  // Força a detecção da cor ou usa um azul padrão caso a planilha não tenha a coluna
   const filamentColor = item.cor || '#3b82f6';
 
   const handleSave = () => {
@@ -135,7 +137,7 @@ export const SpoolCard: React.FC<SpoolCardProps> = ({ item, onUpdate, onDelete }
 
       <div className="text-center">
         <h4 className="font-extrabold text-sm text-slate-900 truncate px-1 uppercase tracking-tight">{item.nome}</h4>
-        <p className="text-[10px] text-slate-800 font-black uppercase tracking-widest mb-2 opacity-80">{item.tipo} • {item.marca}</p>
+        <p className="text-[10px] text-slate-800 font-black uppercase tracking-widest mb-2 opacity-80">{item.tipo || 'PLA'} • {item.marca || 'Genérico'}</p>
         
         <div className="mt-3 pt-4 border-t border-slate-200 flex justify-between items-center">
            <div className="text-left">
