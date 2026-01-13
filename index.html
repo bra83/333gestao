@@ -9,12 +9,10 @@
     <meta name="description" content="Dashboard de controle para impressão 3D" />
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- Google Fonts: Plus Jakarta Sans (Moderna e elegante) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -24,11 +22,10 @@
               sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             },
             colors: {
-              emerald: { 500: '#10b981', 600: '#059669' },
-              sapphire: { 500: '#3b82f6', 600: '#2563eb' },
-              amethyst: { 500: '#a855f7', 600: '#9333ea' },
-              gold: { 400: '#fbbf24', 500: '#f59e0b' },
-              bgLight: '#fdfcfd',
+              emerald: { 500: '#10b981', 600: '#059669', 700: '#047857' },
+              sapphire: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+              amethyst: { 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce' },
+              gold: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' },
             }
           }
         }
@@ -53,43 +50,44 @@
       ::-webkit-scrollbar { display: none; }
       
       .jewelry-card {
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 24px;
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 28px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04);
       }
 
-      .jewel-gradient-emerald { background: linear-gradient(135deg, #34d399 0%, #059669 100%); }
-      .jewel-gradient-amethyst { background: linear-gradient(135deg, #c084fc 0%, #9333ea 100%); }
-      .jewel-gradient-sapphire { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
-
-      .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+      .jewel-gradient-emerald { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+      .jewel-gradient-amethyst { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
+      .jewel-gradient-sapphire { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^18.2.0",
-    "react-dom": "https://esm.sh/react-dom@^18.2.0",
-    "recharts": "https://esm.sh/recharts@^2.10.3",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "recharts": "https://esm.sh/recharts@2.10.3",
     "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "url": "https://esm.sh/url@^0.11.4",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
     "path": "https://esm.sh/path@^0.12.7",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "fs": "https://esm.sh/fs@^0.0.1-security"
+    "url": "https://esm.sh/url@^0.11.4"
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
+      if ('serviceWorker' in navigator && 
+          window.location.hostname !== 'localhost' && 
+          !window.location.hostname.includes('goog')) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js');
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
         });
       }
     </script>
