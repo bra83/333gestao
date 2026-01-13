@@ -4,15 +4,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>3D Quest ERP</title>
-    <meta name="theme-color" content="#fcf9ee" />
+    <title>3D Jewelry ERP</title>
+    <meta name="theme-color" content="#fdfcfd" />
     <meta name="description" content="Dashboard de controle para impressão 3D" />
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- Google Fonts: VT323 (Pixel) e Nunito (Legibilidade) -->
+    <!-- Google Fonts: Plus Jakarta Sans (Moderna e elegante) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,27 +21,14 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Nunito', 'sans-serif'],
-              pixel: ['"VT323"', 'monospace'],
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             },
             colors: {
-              // Paleta Zelda / SNES
-              primary: '#009b48', // Link Green
-              primaryDark: '#006b31',
-              secondary: '#8b5a2b', // Wood/Leather Brown
-              bgPaper: '#fcf9ee', // Old Map Cream
-              bgDark: '#292420', // Cave Dark
-              accent: '#facc15', // Rupee Gold
-              heart: '#e11d48', // Heart Red
-              magic: '#3b82f6', // Magic Meter Blue
-              surface: '#ffffff',
-            },
-            boxShadow: {
-              'retro': '4px 4px 0px 0px rgba(139, 90, 43, 0.4)', // Sombra dura marrom
-              'retro-active': '2px 2px 0px 0px rgba(139, 90, 43, 0.4)',
-            },
-            borderWidth: {
-              '3': '3px',
+              emerald: { 500: '#10b981', 600: '#059669' },
+              sapphire: { 500: '#3b82f6', 600: '#2563eb' },
+              amethyst: { 500: '#a855f7', 600: '#9333ea' },
+              gold: { 400: '#fbbf24', 500: '#f59e0b' },
+              bgLight: '#fdfcfd',
             }
           }
         }
@@ -49,99 +36,60 @@
     </script>
     
     <script>
-      // AQUI VAI APENAS O LINK (URL), NÃO O CÓDIGO!
-      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmAN4jUUam9waw_u8W_9GjobGf1wk64TAdrHxLckxtZviXGyWhYx8Drf4PzLDnDICgMQ/exec";
+      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXPnoUP0I_WT0cpeR1LEt9v-he0J1Emciun85QjS0umJzVEX2SS1n8eJivGNW_bNRhkA/exec";
     </script>
 
     <style>
       body {
-        background-color: #fcf9ee;
-        background-image: radial-gradient(#e5e0cf 1px, transparent 1px);
-        background-size: 20px 20px;
-        color: #4a4036;
+        background-color: #fdfcfd;
+        background-image: 
+          radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.05) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+        color: #1e293b;
         margin: 0;
         -webkit-tap-highlight-color: transparent;
       }
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      ::-webkit-scrollbar {
-        display: none;
-      }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      body {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-      }
-      #loading-spinner {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background: #fcf9ee;
-        font-family: 'VT323', monospace;
-      }
-      .pixel-spinner {
-        width: 60px;
-        height: 60px;
-        background-color: #009b48;
-        animation: pixel-spin 1.2s infinite steps(8);
-        box-shadow: 4px 4px 0 #8b5a2b;
-      }
-      @keyframes pixel-spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
       
-      .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom);
+      ::-webkit-scrollbar { display: none; }
+      
+      .jewelry-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 24px;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03);
       }
 
-      /* Retro Classes Helper */
-      .retro-box {
-        background: white;
-        border: 3px solid #8b5a2b;
-        border-radius: 8px;
-        box-shadow: 4px 4px 0px rgba(139, 90, 43, 0.2);
-      }
-      .retro-btn {
-        transition: all 0.1s;
-      }
-      .retro-btn:active {
-        transform: translate(2px, 2px);
-        box-shadow: 2px 2px 0px rgba(0,0,0,0.2) !important;
-      }
+      .jewel-gradient-emerald { background: linear-gradient(135deg, #34d399 0%, #059669 100%); }
+      .jewel-gradient-amethyst { background: linear-gradient(135deg, #c084fc 0%, #9333ea 100%); }
+      .jewel-gradient-sapphire { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
+
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "react": "https://esm.sh/react@^18.2.0",
+    "react-dom": "https://esm.sh/react-dom@^18.2.0",
+    "recharts": "https://esm.sh/recharts@^2.10.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "url": "https://esm.sh/url@^0.11.4",
+    "path": "https://esm.sh/path@^0.12.7",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "fs": "https://esm.sh/fs@^0.0.1-security"
   }
 }
 </script>
 </head>
   <body>
-    <div id="root">
-      <div id="loading-spinner">
-        <div class="pixel-spinner"></div>
-        <p style="margin-top: 20px; font-size: 24px; color: #8b5a2b;">LOADING...</p>
-      </div>
-    </div>
-    
+    <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
-    
     <script>
       if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('SW registrado: ', reg.scope);
-          }, err => {
-            console.log('SW falhou: ', err);
-          });
+          navigator.serviceWorker.register('./sw.js');
         });
       }
     </script>
