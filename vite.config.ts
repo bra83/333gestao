@@ -28,11 +28,12 @@ const copyPwaFiles = () => {
 
 export default defineConfig({
   plugins: [react(), copyPwaFiles()],
-  base: '/3dforge/',
+  base: './', // Caminhos relativos funcionam melhor em subdiretórios do GitHub Pages
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false
+    sourcemap: ffalse
   },
   publicDir: false
 })
+using

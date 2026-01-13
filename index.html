@@ -26,7 +26,7 @@
     </script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background: #000000; }
       .jewelry-card { background: white; border-radius: 28px; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02); }
       .jewel-gradient-amethyst { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
       .jewel-gradient-sapphire { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
@@ -35,15 +35,15 @@
   <script type="importmap">
 {
   "imports": {
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "url": "https://esm.sh/url@^0.11.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "path": "https://esm.sh/path@^0.12.7",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "fs": "https://esm.sh/fs@^0.0.1-security",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "path": "https://esm.sh/path@^0.12.7",
+    "url": "https://esm.sh/url@^0.11.4"
   }
 }
 </script>
@@ -54,7 +54,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(err => console.log('SW error:', err));
         });
       }
     </script>
