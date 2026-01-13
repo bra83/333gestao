@@ -22,49 +22,55 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     materialTotal: 0, energyTotal: 0, machineTotal: 0, laborTotal: 0, fixedTotal: 0, servicesTotal: 0, subtotal: 0, riskValue: 0, totalCost: 0, finalPrice: 0, profit: 0
   });
 
+  // Helper to ensure numbers
+  const num = (v: any, def = 0) => {
+    const n = Number(v);
+    return (isFinite(n) && !isNaN(n)) ? n : def;
+  };
+
   useEffect(() => {
     if (stock.length === 0) return;
     const filament = stock[selectedFilamentIdx];
     if (!filament) return;
 
-    const safeKwh = settings.kwh || 0.95;
-    const safeVidaUtil = (settings.vidaUtilHoras && settings.vidaUtilHoras > 0) ? settings.vidaUtilHoras : 8000;
-    const safeHorasTrab = (settings.horasTrab && settings.horasTrab > 0) ? settings.horasTrab : 160;
-    const safeEficiencia = (settings.eficienciaFonte && settings.eficienciaFonte > 0) ? settings.eficienciaFonte : 0.9;
-    const safePrecoMaq = settings.precoMaq || 3500;
-    const safeValorHora = settings.valorHoraTrabalho || 20;
+    const safeKwh = num(settings.kwh, 0.95);
+    const safeVidaUtil = num(settings.vidaUtilHoras, 8000) || 8000; // avoid 0 div
+    const safeHorasTrab = num(settings.horasTrab, 160) || 160;
+    const safeEficiencia = num(settings.eficienciaFonte, 0.9) || 0.9;
+    const safePrecoMaq = num(settings.precoMaq, 3500);
+    const safeValorHora = num(settings.valorHoraTrabalho, 20);
 
     const materialBase = (weight / 1000) * filament.preco;
-    const materialLoss = materialBase * ((settings.perdaMaterial || 5) / 100);
+    const materialLoss = materialBase * (num(settings.perdaMaterial, 5) / 100);
     const materialTotal = materialBase + materialLoss;
 
-    const powerKW = (settings.potencia / 1000);
+    const powerKW = (num(settings.potencia) / 1000);
     const energyConsumption = (powerKW * hours) / safeEficiencia;
     const energyTotal = energyConsumption * safeKwh;
 
     const depreciationPerHour = safePrecoMaq / safeVidaUtil;
-    const maintenancePerHour = (settings.manutencaoMensal || 20) / safeHorasTrab;
+    const maintenancePerHour = num(settings.manutencaoMensal, 20) / safeHorasTrab;
     const machineTotal = (depreciationPerHour + maintenancePerHour) * hours;
 
-    const totalLaborMinutes = mode === 'advanced' ? (prepTime + postTime + (settings.tempoAtendimento || 10)) : 0; 
+    const totalLaborMinutes = mode === 'advanced' ? (prepTime + postTime + num(settings.tempoAtendimento, 10)) : 0; 
     const laborTotal = (totalLaborMinutes / 60) * safeValorHora;
 
     // Fixed Costs Calculation (Now including Internet)
-    const totalMonthlyFixed = settings.aluguel + settings.mei + settings.softwares + settings.ecommerce + settings.publicidade + settings.condominio + (settings.internet || 0);
+    const totalMonthlyFixed = num(settings.aluguel) + num(settings.mei) + num(settings.softwares) + num(settings.ecommerce) + num(settings.publicidade) + num(settings.condominio) + num(settings.internet);
     const fixedCostPerHour = totalMonthlyFixed / safeHorasTrab;
     const fixedTotal = fixedCostPerHour * hours;
 
     let paintCost = 0;
-    if (paintingType === 'simple') paintCost = settings.pintSimples;
-    if (paintingType === 'medium') paintCost = settings.pintMedia;
-    if (paintingType === 'pro') paintCost = settings.pintProf;
-    const servicesTotal = settings.embalagem + paintCost;
+    if (paintingType === 'simple') paintCost = num(settings.pintSimples);
+    if (paintingType === 'medium') paintCost = num(settings.pintMedia);
+    if (paintingType === 'pro') paintCost = num(settings.pintProf);
+    const servicesTotal = num(settings.embalagem) + paintCost;
 
     const subtotal = materialTotal + energyTotal + machineTotal + laborTotal + fixedTotal + servicesTotal;
     const riskPct = mode === 'advanced' ? (failRate / 100) : 0;
     const riskValue = subtotal * riskPct;
     const totalCost = subtotal + riskValue;
-    const finalPrice = totalCost * (settings.markup || 3);
+    const finalPrice = totalCost * num(settings.markup, 3);
     const profit = finalPrice - totalCost;
 
     const safeNum = (n: number) => (isFinite(n) && !isNaN(n)) ? n : 0;
@@ -116,9 +122,9 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
             <label className="block text-xs font-bold text-slate-500 mb-1 ml-1">Acabamento</label>
             <select className="app-input w-full bg-white" value={paintingType} onChange={e => setPaintingType(e.target.value as any)}>
               <option value="none">Nenhum</option>
-              <option value="simple">Simples (+R${settings.pintSimples})</option>
-              <option value="medium">Médio (+R${settings.pintMedia})</option>
-              <option value="pro">Profissional (+R${settings.pintProf})</option>
+              <option value="simple">Simples (+R${num(settings.pintSimples)})</option>
+              <option value="medium">Médio (+R${num(settings.pintMedia)})</option>
+              <option value="pro">Profissional (+R${num(settings.pintProf)})</option>
             </select>
           </div>
 
