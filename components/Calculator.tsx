@@ -9,197 +9,175 @@ interface CalculatorProps {
 }
 
 export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveSale }) => {
+  const [mode, setMode] = useState<'basic' | 'advanced'>('advanced');
   const [selectedFilamentIdx, setSelectedFilamentIdx] = useState<number>(0);
   const [itemName, setItemName] = useState<string>('');
   const [weight, setWeight] = useState<number>(0);
   const [hours, setHours] = useState<number>(0);
   const [paintingType, setPaintingType] = useState<'none' | 'simple' | 'medium' | 'pro'>('none');
-  
+  const [prepTime, setPrepTime] = useState<number>(settings.tempoPreparacao || 15);
+  const [postTime, setPostTime] = useState<number>(settings.tempoPosProcessamento || 15);
+  const [failRate, setFailRate] = useState<number>(settings.risco || 10);
   const [costs, setCosts] = useState({
-    materialTotal: 0, energyTotal: 0, machineTotal: 0, laborTotal: 0, fixedTotal: 0, servicesTotal: 0, totalCost: 0, finalPrice: 0, profit: 0
+    materialTotal: 0, energyTotal: 0, machineTotal: 0, laborTotal: 0, fixedTotal: 0, servicesTotal: 0, subtotal: 0, riskValue: 0, totalCost: 0, finalPrice: 0, profit: 0
   });
 
-  // Função de segurança para garantir que sempre teremos um número válido
-  const n = (val: any): number => {
-    const num = parseFloat(val);
-    return isNaN(num) ? 0 : num;
-  };
-
   useEffect(() => {
-    if (!stock || stock.length === 0) return;
-    const filament = stock[selectedFilamentIdx] || stock[0];
+    if (stock.length === 0) return;
+    const filament = stock[selectedFilamentIdx];
     if (!filament) return;
 
-    // Constantes das configurações com fallback de segurança
-    const kwh = n(settings.kwh) || 0.95;
-    const vidaUtilH = n(settings.vidaUtilHoras) || 8000;
-    const horasTrabMes = n(settings.horasTrab) || 160;
-    const precoMaq = n(settings.precoMaq) || 3000;
-    const valorHora = n(settings.valorHoraTrabalho) || 20;
-    const markup = n(settings.markup) || 3;
-    const potencia = n(settings.potencia) || 350;
+    const safeKwh = settings.kwh || 0.95;
+    const safeVidaUtil = (settings.vidaUtilHoras && settings.vidaUtilHoras > 0) ? settings.vidaUtilHoras : 8000;
+    const safeHorasTrab = (settings.horasTrab && settings.horasTrab > 0) ? settings.horasTrab : 160;
+    const safeEficiencia = (settings.eficienciaFonte && settings.eficienciaFonte > 0) ? settings.eficienciaFonte : 0.9;
+    const safePrecoMaq = settings.precoMaq || 3500;
+    const safeValorHora = settings.valorHoraTrabalho || 20;
 
-    // 1. Custo Material (Peso em g / 1000 * preço do rolo)
-    const materialTotal = (n(weight) / 1000) * n(filament.preco) * (1 + n(settings.perdaMaterial)/100);
+    const materialBase = (weight / 1000) * filament.preco;
+    const materialLoss = materialBase * ((settings.perdaMaterial || 5) / 100);
+    const materialTotal = materialBase + materialLoss;
 
-    // 2. Custo Energia
-    const energyTotal = ((potencia / 1000) * n(hours) / (n(settings.eficienciaFonte) || 0.9)) * kwh;
+    const powerKW = (settings.potencia / 1000);
+    const energyConsumption = (powerKW * hours) / safeEficiencia;
+    const energyTotal = energyConsumption * safeKwh;
 
-    // 3. Máquina (Depreciação + Manutenção)
-    const machineTotal = ((precoMaq / vidaUtilH) + (n(settings.manutencaoMensal) / horasTrabMes)) * n(hours);
+    const depreciationPerHour = safePrecoMaq / safeVidaUtil;
+    const maintenancePerHour = (settings.manutencaoMensal || 20) / safeHorasTrab;
+    const machineTotal = (depreciationPerHour + maintenancePerHour) * hours;
 
-    // 4. Mão de Obra
-    const laborMinutes = n(settings.tempoPreparacao) + n(settings.tempoPosProcessamento) + n(settings.tempoAtendimento);
-    const laborTotal = (laborMinutes / 60) * valorHora;
+    const totalLaborMinutes = mode === 'advanced' ? (prepTime + postTime + (settings.tempoAtendimento || 10)) : 0; 
+    const laborTotal = (totalLaborMinutes / 60) * safeValorHora;
 
-    // 5. Custos Fixos
-    const totalFixed = n(settings.aluguel) + n(settings.mei) + n(settings.softwares) + n(settings.ecommerce) + n(settings.publicidade) + n(settings.condominio);
-    const fixedTotal = (totalFixed / horasTrabMes) * n(hours);
+    // Fixed Costs Calculation (Now including Internet)
+    const totalMonthlyFixed = settings.aluguel + settings.mei + settings.softwares + settings.ecommerce + settings.publicidade + settings.condominio + (settings.internet || 0);
+    const fixedCostPerHour = totalMonthlyFixed / safeHorasTrab;
+    const fixedTotal = fixedCostPerHour * hours;
 
-    // 6. Serviços
     let paintCost = 0;
-    if (paintingType === 'simple') paintCost = n(settings.pintSimples);
-    if (paintingType === 'medium') paintCost = n(settings.pintMedia);
-    if (paintingType === 'pro') paintCost = n(settings.pintProf);
-    const servicesTotal = n(settings.embalagem) + paintCost;
+    if (paintingType === 'simple') paintCost = settings.pintSimples;
+    if (paintingType === 'medium') paintCost = settings.pintMedia;
+    if (paintingType === 'pro') paintCost = settings.pintProf;
+    const servicesTotal = settings.embalagem + paintCost;
 
     const subtotal = materialTotal + energyTotal + machineTotal + laborTotal + fixedTotal + servicesTotal;
-    const totalCost = subtotal * (1 + n(settings.risco)/100);
-    const finalPrice = totalCost * markup;
+    const riskPct = mode === 'advanced' ? (failRate / 100) : 0;
+    const riskValue = subtotal * riskPct;
+    const totalCost = subtotal + riskValue;
+    const finalPrice = totalCost * (settings.markup || 3);
     const profit = finalPrice - totalCost;
 
+    const safeNum = (n: number) => (isFinite(n) && !isNaN(n)) ? n : 0;
     setCosts({
-      materialTotal, energyTotal, machineTotal, laborTotal, fixedTotal, servicesTotal, totalCost, finalPrice, profit
+      materialTotal: safeNum(materialTotal), energyTotal: safeNum(energyTotal), machineTotal: safeNum(machineTotal),
+      laborTotal: safeNum(laborTotal), fixedTotal: safeNum(fixedTotal), servicesTotal: safeNum(servicesTotal),
+      subtotal: safeNum(subtotal), riskValue: safeNum(riskValue), totalCost: safeNum(totalCost),
+      finalPrice: safeNum(finalPrice), profit: safeNum(profit)
     });
-
-  }, [weight, hours, paintingType, selectedFilamentIdx, settings, stock]);
+  }, [weight, hours, paintingType, selectedFilamentIdx, settings, stock, mode, prepTime, postTime, failRate]);
 
   const handleSave = () => {
-    if (!itemName) return alert('Dê um nome ao seu tesouro!');
-    const filament = stock[selectedFilamentIdx] || stock[0];
-    onSaveSale(itemName, filament.nome, n(weight), costs.finalPrice, costs.profit, filament.id);
-    setItemName(''); setWeight(0); setHours(0);
+    if (!itemName) return alert('Nome do projeto obrigatório!');
+    const filament = stock[selectedFilamentIdx];
+    const materialName = filament.marca ? `${filament.nome} (${filament.marca})` : filament.nome;
+    if (window.confirm(`Registrar venda de "${itemName}" por R$ ${costs.finalPrice.toFixed(2)}?`)) {
+      onSaveSale(itemName, materialName, weight, costs.finalPrice, costs.profit, filament.id);
+      setItemName(''); setWeight(0); setHours(0);
+    }
   };
 
-  if (!stock || stock.length === 0) {
-    return (
-      <div className="jewelry-card p-10 text-center bg-white border-2 border-dashed border-slate-200">
-        <div className="text-4xl mb-4">💎</div>
-        <h3 className="text-slate-900 font-black uppercase tracking-widest text-sm">Cofre Vazio</h3>
-        <p className="text-slate-400 text-[10px] font-bold mt-2">Cadastre seus filamentos na aba "Gemas" primeiro.</p>
-      </div>
-    );
-  }
+  if (stock.length === 0) return <div className="app-card p-8 text-center text-slate-500">Nenhum item no estoque!</div>;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="jewelry-card p-6 bg-white shadow-xl border border-slate-100">
-        <h2 className="text-slate-900 font-black text-sm uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-          <span className="w-2 h-6 jewel-gradient-sapphire rounded-full"></span>
-          Orçamento de Luxo
-        </h2>
+    <div className="space-y-6">
+      
+      <div className="flex bg-slate-100 p-1 rounded-xl">
+        <button onClick={() => setMode('basic')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'basic' ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}`}>Básico</button>
+        <button onClick={() => setMode('advanced')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${mode === 'advanced' ? 'bg-white text-primary shadow-sm' : 'text-slate-400'}`}>Avançado</button>
+      </div>
+
+      <div className="app-card p-5">
+        <h2 className="text-primary font-bold text-lg mb-4">Novo Orçamento</h2>
         
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Nome do Projeto</label>
-            <input 
-              type="text" 
-              className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-900 font-bold outline-none focus:border-sapphire-500 focus:bg-white transition-all"
-              placeholder="Ex: Anel de Saturno"
-              value={itemName} 
-              onChange={e => setItemName(e.target.value)} 
-            />
+            <label className="block text-xs font-bold text-slate-500 mb-1 ml-1">Projeto</label>
+            <input type="text" className="app-input w-full" value={itemName} onChange={e => setItemName(e.target.value)} placeholder="Nome da peça" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Gema (Material)</label>
-              <select 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-900 font-bold outline-none focus:border-sapphire-500 appearance-none"
-                value={selectedFilamentIdx} 
-                onChange={e => setSelectedFilamentIdx(Number(e.target.value))}
-              >
-                {stock.map((item, idx) => (
-                  <option key={item.id || idx} value={idx}>{item.nome}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Acabamento</label>
-              <select 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-900 font-bold outline-none focus:border-sapphire-500 appearance-none"
-                value={paintingType} 
-                onChange={e => setPaintingType(e.target.value as any)}
-              >
-                <option value="none">Bruto</option>
-                <option value="simple">Polimento</option>
-                <option value="medium">Banho Simples</option>
-                <option value="pro">Joalheria</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 ml-1">Material</label>
+            <select className="app-input w-full bg-white" value={selectedFilamentIdx} onChange={e => setSelectedFilamentIdx(Number(e.target.value))}>
+              {stock.map((item, idx) => (<option key={idx} value={idx}>{item.nome} - R${item.preco}/kg</option>))}
+            </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-             <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Massa (g)</label>
-                <input 
-                  type="number" 
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-900 font-black text-xl outline-none focus:border-sapphire-500"
-                  value={weight || ''} 
-                  onChange={e => setWeight(n(e.target.value))} 
-                />
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1 ml-1">Acabamento</label>
+            <select className="app-input w-full bg-white" value={paintingType} onChange={e => setPaintingType(e.target.value as any)}>
+              <option value="none">Nenhum</option>
+              <option value="simple">Simples (+R${settings.pintSimples})</option>
+              <option value="medium">Médio (+R${settings.pintMedia})</option>
+              <option value="pro">Profissional (+R${settings.pintProf})</option>
+            </select>
+          </div>
+
+          <div className="flex gap-4">
+             <div className="flex-1">
+                <label className="block text-xs font-bold text-slate-500 mb-1 ml-1">Peso (g)</label>
+                <input type="number" className="app-input w-full text-lg font-bold text-primary" value={weight || ''} onChange={e => setWeight(Number(e.target.value))} />
              </div>
-             <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 mb-1 ml-1 block">Tempo (h)</label>
-                <input 
-                  type="number" 
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-slate-900 font-black text-xl outline-none focus:border-sapphire-500"
-                  value={hours || ''} 
-                  onChange={e => setHours(n(e.target.value))} 
-                />
+             <div className="flex-1">
+                <label className="block text-xs font-bold text-slate-500 mb-1 ml-1">Tempo (h)</label>
+                <input type="number" className="app-input w-full text-lg font-bold text-primary" value={hours || ''} onChange={e => setHours(Number(e.target.value))} />
              </div>
           </div>
         </div>
       </div>
 
-      <div className="jewelry-card overflow-hidden bg-slate-900 shadow-2xl">
-        <div className="p-6 space-y-3">
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-            <span>Custo Operacional</span>
-            <span className="text-white">R$ {(costs.totalCost - costs.materialTotal).toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-            <span>Matéria Prima</span>
-            <span className="text-white">R$ {costs.materialTotal.toFixed(2)}</span>
-          </div>
-          
-          <div className="h-px bg-slate-800 my-4"></div>
-          
-          <div className="text-center py-4">
-            <span className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.3em] block mb-2">Valor de Mercado</span>
-            <div className="text-5xl font-black text-white tracking-tighter">
-              R$ {costs.finalPrice.toFixed(2)}
-            </div>
-            <span className="text-emerald-400/60 text-[10px] font-bold uppercase mt-2 block">
-              Lucro Estimado: R$ {costs.profit.toFixed(2)}
-            </span>
-          </div>
-
-          <button 
-            onClick={handleSave} 
-            className="w-full jewel-gradient-emerald text-white font-black py-5 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/40 active:scale-95 transition-all mt-4"
-          >
-            Vender Obra
-          </button>
+      <div className="app-card p-0 overflow-hidden border-primary/20">
+        <div className="bg-slate-50 p-4 border-b border-slate-100">
+            <h3 className="text-slate-500 font-bold text-xs uppercase tracking-wider">Detalhamento</h3>
         </div>
-      </div>
+        
+        <div className="p-5 space-y-3 text-sm text-slate-600">
+          <Row label="Material" value={costs.materialTotal} />
+          <Row label="Energia" value={costs.energyTotal} />
+          <Row label="Depreciação" value={costs.machineTotal} />
+          <Row label="Mão de Obra" value={costs.laborTotal} />
+          <Row label="Custos Fixos" value={costs.fixedTotal} />
+          <Row label="Acabamento/Emb." value={costs.servicesTotal} />
+          <Row label="Margem de Risco" value={costs.riskValue} />
+          
+          <div className="border-t border-slate-100 my-2 pt-2"></div>
+          
+          <div className="flex justify-between text-base font-bold text-primary">
+            <span>Custo Total</span>
+            <span>R$ {costs.totalCost.toFixed(2)}</span>
+          </div>
+        </div>
+        
+        <div className="bg-primary p-6 text-center text-white">
+            <span className="block text-xs text-blue-200 font-bold uppercase tracking-wider mb-1">Preço Sugerido</span>
+            <div className="text-5xl font-extrabold mb-2 tracking-tight">
+            R$ {costs.finalPrice.toFixed(2)}
+            </div>
+            <div className="text-blue-200 text-sm font-medium bg-white/10 inline-block px-3 py-1 rounded-full">
+            Lucro Estimado: R$ {costs.profit.toFixed(2)}
+            </div>
 
-      <div className="px-4 text-center">
-        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
-          Cálculo baseado em depreciação de {settings.vidaUtilHoras || 8000}h <br/> 
-          e markup de {settings.markup}x
-        </p>
+            <button onClick={handleSave} className="app-btn mt-6 w-full bg-white text-primary py-4 shadow-lg hover:bg-blue-50">
+            Registrar Venda
+            </button>
+        </div>
       </div>
     </div>
   );
 };
+
+const Row = ({ label, value }: { label: string, value: number }) => (
+  <div className="flex justify-between items-center">
+    <span className="text-slate-500">{label}</span>
+    <span className="font-semibold">R$ {value.toFixed(2)}</span>
+  </div>
+);
