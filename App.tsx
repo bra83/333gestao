@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, AppData, ViewState, StockItem } from './types';
-import { DEFAULT_SETTINGS, MOCK_DATA } from './constants';
+import { DEFAULT_SETTINGS } from './constants';
 import { Calculator } from './components/Calculator';
 import { DashboardView } from './components/DashboardView';
 import { InventoryView } from './components/InventoryView';
@@ -21,20 +21,16 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Função para limpar números vindos da planilha (ex: "1.200,50" -> 1200.5)
   const parseRemoteNumber = (val: any): number => {
     if (typeof val === 'number') return val;
     if (!val) return 0;
-    const clean = String(val).replace(/\./g, '').replace(',', '.');
+    const clean = String(val).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
     const num = parseFloat(clean);
     return isNaN(num) ? 0 : num;
   };
 
   const fetchData = useCallback(async () => {
-    if (!apiUrl) { 
-      setData(MOCK_DATA); 
-      return; 
-    }
+    if (!apiUrl) return;
     setLoading(true);
     try {
       const ts = new Date().getTime();
@@ -52,49 +48,48 @@ const App: React.FC = () => {
         const d = await dRes.json();
         setData({
           estoque: (d.estoque || []).map((i: any) => ({ 
-            ...i, 
-            peso: parseRemoteNumber(i.peso), 
-            preco: parseRemoteNumber(i.preco),
-            // Fallbacks caso a coluna cor/tipo não exista na planilha ainda
-            cor: i.cor || i.Cor || '#3b82f6',
-            tipo: i.tipo || i.Tipo || 'PLA'
+            id: i.id || i.ID || String(Math.random()),
+            nome: i.nome || i.Nome || "", 
+            marca: i.marca || i.Marca || "",
+            peso: parseRemoteNumber(i.peso || i.Peso), 
+            preco: parseRemoteNumber(i.preco || i.Preco),
+            cor: i.cor || i.Cor || "#3b82f6",
+            tipo: i.tipo || i.Tipo || "PLA"
           })),
           vendas: (d.vendas || []).map((i: any) => ({ 
             ...i, 
-            venda: parseRemoteNumber(i.venda), 
-            lucro: parseRemoteNumber(i.lucro) 
+            venda: parseRemoteNumber(i.venda || i.Venda), 
+            lucro: parseRemoteNumber(i.lucro || i.Lucro) 
           })),
           gastos: (d.gastos || []).map((i: any) => ({ 
             ...i, 
-            valor: parseRemoteNumber(i.valor) 
+            valor: parseRemoteNumber(i.valor || i.Valor) 
           }))
         });
       }
     } catch (e) { 
-      console.error("Erro ao buscar dados:", e);
-      showToast("Erro ao conectar com a planilha");
+      showToast("Erro ao sincronizar com a nuvem");
     } finally { 
       setLoading(false); 
     }
   }, [apiUrl]);
 
   useEffect(() => { 
-    fetchData(); 
-  }, [fetchData]);
+    if (apiUrl) fetchData(); 
+  }, [fetchData, apiUrl]);
 
   const apiCall = async (payload: any) => {
     if (!apiUrl) return false;
     const formData = new FormData();
     Object.keys(payload).forEach(k => {
-      formData.append(k, payload[k] === undefined || payload[k] === null ? "" : String(payload[k]));
+      const val = payload[k] === undefined || payload[k] === null ? "" : String(payload[k]);
+      formData.append(k, val);
     });
     
     try { 
       const res = await fetch(apiUrl, { method: 'POST', body: formData });
-      if (!res.ok) throw new Error("Sync Error");
-      return true;
+      return res.ok;
     } catch (e) { 
-      showToast("Falha na sincronização remota");
       return false;
     }
   };
@@ -102,20 +97,15 @@ const App: React.FC = () => {
   const handleAddStock = async (n: string, m: string, p: number, pr: number, c: string, t: string) => {
     const item: StockItem = { id: "ST" + Date.now(), nome: n, marca: m, peso: p, preco: pr, cor: c, tipo: t };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, item] }));
-    const success = await apiCall({ type: 'estoque', action: 'create', ...item });
-    if (success) showToast("Salvo na planilha!");
+    const ok = await apiCall({ type: 'estoque', action: 'create', ...item });
+    if(ok) showToast("Gema guardada no cofre!");
   };
 
   const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
     const currentItem = data.estoque.find(i => i.id === id);
     if (!currentItem) return;
     const updatedItem = { ...currentItem, ...updates };
-    
-    setData(prev => ({ 
-      ...prev, 
-      estoque: prev.estoque.map(i => i.id === id ? updatedItem : i) 
-    }));
-    
+    setData(prev => ({ ...prev, estoque: prev.estoque.map(i => i.id === id ? updatedItem : i) }));
     await apiCall({ type: 'estoque', action: 'update', ...updatedItem });
   };
 
@@ -123,7 +113,6 @@ const App: React.FC = () => {
     if (!confirm("Remover permanentemente?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(i => i.id !== id) }));
     await apiCall({ type: 'estoque', action: 'delete', id });
-    showToast("Removido");
   };
 
   const NavButton = ({ v, icon: Icon, label, color }: { v: ViewState, icon: any, label: string, color: string }) => (
@@ -142,12 +131,20 @@ const App: React.FC = () => {
           </div>
           <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-amethyst-600 via-sapphire-500 to-emerald-600">3D JEWELRY</h1>
         </div>
-        <button onClick={fetchData} className={`p-2 rounded-full transition-all ${loading ? 'animate-spin' : 'active:scale-90'}`}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="3"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        <button onClick={fetchData} className={`p-2 rounded-full transition-all ${loading ? 'animate-spin text-amethyst-500' : 'active:scale-90 text-slate-400'}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         </button>
       </header>
 
       <main className="p-5 max-w-2xl mx-auto">
+        {apiUrl === "" && view !== ViewState.SETTINGS && (
+          <div className="jewelry-card p-8 text-center animate-pulse border-2 border-dashed border-amethyst-200">
+            <h2 className="font-black text-amethyst-600 uppercase mb-2">Conexão Necessária</h2>
+            <p className="text-xs font-bold text-slate-400 mb-6">Configure o link do seu Google Sheets para começar a minerar dados.</p>
+            <button onClick={() => setView(ViewState.SETTINGS)} className="jewel-gradient-amethyst text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest">Configurar Agora</button>
+          </div>
+        )}
+
         {view === ViewState.DASHBOARD && <DashboardView data={data} onNavigate={setView} />}
         {view === ViewState.CALCULATOR && <Calculator settings={settings} stock={data.estoque} onSaveSale={async (it, mat, pes, ven, luc, sid) => {
           const s = { id: "VE" + Date.now(), data: new Date().toISOString().split('T')[0], item: it, material: mat, peso: pes, venda: ven, lucro: luc };
@@ -179,9 +176,7 @@ const App: React.FC = () => {
           await apiCall({ type: 'gasto', action: 'delete', id });
         }} />}
         {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={async (s) => {
-          setSettings(s); 
-          await apiCall({ type: 'save_settings', ...s }); 
-          showToast("Ajustes Salvos");
+          setSettings(s); await apiCall({ type: 'save_settings', ...s }); showToast("Ajustes Salvos");
         }} apiUrl={apiUrl} onUrlChange={(val) => { setApiUrl(val); localStorage.setItem('APPS_SCRIPT_URL', val); }} onRetry={fetchData} />}
       </main>
 
