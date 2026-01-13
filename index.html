@@ -7,7 +7,9 @@
     <title>333 Gestão</title>
     <meta name="theme-color" content="#ffffff" />
     <meta name="description" content="Dashboard de controle para impressão 3D" />
-    <link rel="manifest" href="./manifest.json" />
+    
+    <!-- Adicionado ?v=2 para obrigar o navegador a reler o manifesto -->
+    <link rel="manifest" href="./manifest.json?v=2" />
     
     <!-- Google Fonts: Apenas Nunito (Moderna e Legível) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -132,7 +134,9 @@
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "recharts": "https://esm.sh/recharts@^3.6.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "path": "https://esm.sh/path@^0.12.7"
   }
 }
 </script>
@@ -147,13 +151,38 @@
     <script type="module" src="./index.tsx"></script>
     
     <script>
+      // Script melhorado para registrar o SW e lidar com atualizações
       if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('SW registrado: ', reg.scope);
-          }, err => {
-            console.log('SW falhou: ', err);
-          });
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+              console.log('SW Registrado no escopo:', reg.scope);
+              
+              // Se houver um SW esperando, força a atualização
+              if (reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+              
+              reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                  if (installingWorker.state === 'installed') {
+                    if (navigator.serviceWorker.controller) {
+                      console.log('Nova versão disponível!');
+                    }
+                  }
+                };
+              };
+            })
+            .catch(err => console.log('SW Falhou:', err));
+        });
+
+        // Recarrega a página se o SW mudar (garante que o usuário veja a versão nova)
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshing) return;
+          window.location.reload();
+          refreshing = true;
         });
       }
     </script>
