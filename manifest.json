@@ -1,19 +1,22 @@
+
 {
-  "name": "3D Print ERP",
-  "short_name": "3D Print",
-  "start_url": "./",
-  "scope": "./",
+  "id": "333-gestao-3d-app-v2",
+  "name": "333 Gestão 3D",
+  "short_name": "333 Gestão",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ecfdf5",
-  "theme_color": "#059669",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "scope": "./",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/bra83/3dforge/main/icon-192.png",
+      "src": "https://raw.githubusercontent.com/bra83/333gestao/main/icon-512.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/bra83/3dforge/main/icon-512.png",
+      "src": "https://raw.githubusercontent.com/bra83/333gestao/main/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
