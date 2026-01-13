@@ -1,3 +1,4 @@
+
 import { Settings, AppData } from './types';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -11,6 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pintProf: 80,
   aluguel: 0,
   softwares: 50,
+  internet: 100, // Default internet cost
   ecommerce: 0,
   mei: 75,
   publicidade: 0,
