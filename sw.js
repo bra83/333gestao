@@ -1,19 +1,20 @@
 
-const CACHE_NAME = '3d-erp-v15.0-clean-ui';
+const CACHE_NAME = '3d-erp-RESET-v20.0'; // Nome alterado para forçar atualização total
 
-// No GitHub Pages, o caminho pode não ser a raiz absoluta.
+// Caminhos relativos para compatibilidade com GitHub Pages
 const assets = [
   './',
   './index.html',
   './manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap'
+  'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap'
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting();
+  self.skipWaiting(); // Força o SW a assumir imediatamente
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
+      console.log('[SW] Caching assets novo repo');
       return cache.addAll(assets);
     })
   );
@@ -23,7 +24,9 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
       keys.map(key => {
+        // Apaga QUALQUER cache que não seja o atual
         if (key !== CACHE_NAME) {
+          console.log('[SW] Apagando cache antigo:', key);
           return caches.delete(key);
         }
       })
@@ -46,7 +49,9 @@ self.addEventListener('fetch', event => {
           });
         }
         return networkResponse;
-      }).catch(() => {});
+      }).catch(() => {
+        // Fallback silencioso
+      });
 
       return cachedResponse || fetchPromise;
     })
