@@ -1,3 +1,4 @@
+
 export interface Settings {
   // --- Basic / Legacy ---
   markup: number;
@@ -9,6 +10,7 @@ export interface Settings {
   pintProf: number;
   aluguel: number;
   softwares: number;
+  internet: number; // New field
   ecommerce: number;
   mei: number;
   publicidade: number;
