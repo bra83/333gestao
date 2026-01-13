@@ -247,14 +247,21 @@ const App: React.FC = () => {
     localStorage.setItem('APPS_SCRIPT_URL', val);
   };
 
-  const NavButton = ({ v, icon: Icon, label }: { v: ViewState, icon: any, label: string }) => (
-    <button onClick={() => setView(v)} className={`flex flex-col items-center justify-center w-full py-3 transition-all duration-300 ${view === v ? 'text-primary' : 'text-textMuted hover:text-primary/70'}`}>
-      <div className={`p-1.5 rounded-2xl transition-all duration-300 ${view === v ? 'bg-white shadow-sm -translate-y-1' : ''}`}>
-        <Icon active={view === v} />
-      </div>
-      <span className={`text-[10px] font-bold mt-1 ${view === v ? 'opacity-100' : 'opacity-60'}`}>{label}</span>
-    </button>
-  );
+  // NavButton atualizado para suportar cores Jewelery
+  const NavButton = ({ v, icon: Icon, label, activeColor, hoverColor }: { v: ViewState, icon: any, label: string, activeColor: string, hoverColor: string }) => {
+    const isActive = view === v;
+    return (
+      <button 
+        onClick={() => setView(v)} 
+        className={`group flex flex-col items-center justify-center w-full py-2 transition-all duration-300 ${isActive ? activeColor : 'text-slate-400 ' + hoverColor}`}
+      >
+        <div className={`p-1.5 rounded-2xl transition-all duration-300 ${isActive ? 'bg-white shadow-sm -translate-y-2 scale-110 ring-1 ring-slate-100' : 'group-hover:-translate-y-1 group-hover:bg-slate-50'}`}>
+          <Icon active={isActive} />
+        </div>
+        <span className={`text-[10px] font-bold mt-1 transition-all ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>{label}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-bgBody text-textMain font-sans selection:bg-accent/20 selection:text-accent">
@@ -294,14 +301,54 @@ const App: React.FC = () => {
         {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={handleSaveSettings} apiUrl={apiUrl} onUrlChange={handleUrlChange} lastError={lastError} onRetry={fetchData} onMaintenance={handleMaintenance} />}
       </main>
 
-      {/* MODERN NAV */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-safe z-30 shadow-nav">
+      {/* MODERN NAV JEWELERY COLORS */}
+      <nav className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 pb-safe z-30 shadow-nav">
         <div className="flex justify-around max-w-xl mx-auto pt-2 px-2">
-          <NavButton v={ViewState.DASHBOARD} icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>} label="Início" />
-          <NavButton v={ViewState.CALCULATOR} icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/></svg>} label="Calc" />
-          <NavButton v={ViewState.INVENTORY} icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>} label="Estoque" />
-          <NavButton v={ViewState.TRANSACTIONS} icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-all"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>} label="Caixa" />
-          <NavButton v={ViewState.SETTINGS} icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>} label="Config" />
+          
+          {/* DIAMOND (CYAN) */}
+          <NavButton 
+            v={ViewState.DASHBOARD} 
+            activeColor="text-cyan-500" 
+            hoverColor="hover:text-cyan-500"
+            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>} 
+            label="Início" 
+          />
+          
+          {/* TOPAZ (AMBER/GOLD) */}
+          <NavButton 
+            v={ViewState.CALCULATOR} 
+            activeColor="text-amber-500" 
+            hoverColor="hover:text-amber-500"
+            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/></svg>} 
+            label="Calc" 
+          />
+          
+          {/* EMERALD (GREEN) */}
+          <NavButton 
+            v={ViewState.INVENTORY} 
+            activeColor="text-emerald-500" 
+            hoverColor="hover:text-emerald-500"
+            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>} 
+            label="Estoque" 
+          />
+          
+          {/* RUBY (ROSE/RED) */}
+          <NavButton 
+            v={ViewState.TRANSACTIONS} 
+            activeColor="text-rose-500" 
+            hoverColor="hover:text-rose-500"
+            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-all"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>} 
+            label="Caixa" 
+          />
+          
+          {/* AMETHYST (VIOLET/PURPLE) */}
+          <NavButton 
+            v={ViewState.SETTINGS} 
+            activeColor="text-violet-500" 
+            hoverColor="hover:text-violet-500"
+            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>} 
+            label="Config" 
+          />
         </div>
       </nav>
       
