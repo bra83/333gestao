@@ -21,16 +21,23 @@ const App: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // Função para limpar números vindos da planilha (ex: "1.200,50" -> 1200.5)
+  const parseRemoteNumber = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const clean = String(val).replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  };
+
   const fetchData = useCallback(async () => {
     if (!apiUrl) { 
-      // Se não tem URL, usa mock mas não marca como carregado permanentemente
       setData(MOCK_DATA); 
       return; 
     }
     setLoading(true);
     try {
       const ts = new Date().getTime();
-      // Buscamos configurações e dados com timestamp para furar qualquer cache de navegador/proxy
       const [sRes, dRes] = await Promise.all([
         fetch(`${apiUrl}?type=read_settings&nocache=${ts}`),
         fetch(`${apiUrl}?type=read_data&nocache=${ts}`)
@@ -46,12 +53,21 @@ const App: React.FC = () => {
         setData({
           estoque: (d.estoque || []).map((i: any) => ({ 
             ...i, 
-            peso: Number(i.peso || 0), 
-            preco: Number(i.preco || 0),
-            cor: i.cor || '#3b82f6'
+            peso: parseRemoteNumber(i.peso), 
+            preco: parseRemoteNumber(i.preco),
+            // Fallbacks caso a coluna cor/tipo não exista na planilha ainda
+            cor: i.cor || i.Cor || '#3b82f6',
+            tipo: i.tipo || i.Tipo || 'PLA'
           })),
-          vendas: (d.vendas || []).map((i: any) => ({ ...i, venda: Number(i.venda), lucro: Number(i.lucro) })),
-          gastos: (d.gastos || []).map((i: any) => ({ ...i, valor: Number(i.valor) }))
+          vendas: (d.vendas || []).map((i: any) => ({ 
+            ...i, 
+            venda: parseRemoteNumber(i.venda), 
+            lucro: parseRemoteNumber(i.lucro) 
+          })),
+          gastos: (d.gastos || []).map((i: any) => ({ 
+            ...i, 
+            valor: parseRemoteNumber(i.valor) 
+          }))
         });
       }
     } catch (e) { 
@@ -67,9 +83,8 @@ const App: React.FC = () => {
   }, [fetchData]);
 
   const apiCall = async (payload: any) => {
-    if (!apiUrl) return;
+    if (!apiUrl) return false;
     const formData = new FormData();
-    // Garante que campos nulos ou indefinidos virem strings vazias para o Apps Script
     Object.keys(payload).forEach(k => {
       formData.append(k, payload[k] === undefined || payload[k] === null ? "" : String(payload[k]));
     });
@@ -88,7 +103,7 @@ const App: React.FC = () => {
     const item: StockItem = { id: "ST" + Date.now(), nome: n, marca: m, peso: p, preco: pr, cor: c, tipo: t };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, item] }));
     const success = await apiCall({ type: 'estoque', action: 'create', ...item });
-    if (success) showToast("Gema lapidada e salva!");
+    if (success) showToast("Salvo na planilha!");
   };
 
   const handleUpdateStock = async (id: string, updates: Partial<StockItem>) => {
@@ -96,21 +111,19 @@ const App: React.FC = () => {
     if (!currentItem) return;
     const updatedItem = { ...currentItem, ...updates };
     
-    // Atualiza local primeiro para interface rápida
     setData(prev => ({ 
       ...prev, 
       estoque: prev.estoque.map(i => i.id === id ? updatedItem : i) 
     }));
     
-    // Sincroniza com a planilha
     await apiCall({ type: 'estoque', action: 'update', ...updatedItem });
   };
 
   const handleDeleteStock = async (id: string) => {
-    if (!confirm("Remover gema do cofre permanentemente?")) return;
+    if (!confirm("Remover permanentemente?")) return;
     setData(prev => ({ ...prev, estoque: prev.estoque.filter(i => i.id !== id) }));
     await apiCall({ type: 'estoque', action: 'delete', id });
-    showToast("Gema removida");
+    showToast("Removido");
   };
 
   const NavButton = ({ v, icon: Icon, label, color }: { v: ViewState, icon: any, label: string, color: string }) => (
@@ -149,11 +162,8 @@ const App: React.FC = () => {
         }} />}
         {view === ViewState.INVENTORY && <InventoryView stock={data.estoque} onAddStock={handleAddStock} onUpdateStock={handleUpdateStock} onDeleteStock={handleDeleteStock} />}
         {view === ViewState.TRANSACTIONS && <TransactionsView sales={data.vendas} expenses={data.gastos} onUpdateSale={(id, v, l) => {
-          const sale = data.vendas.find(s => s.id === id);
-          if (sale) {
-            setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: v, lucro: l } : s) }));
-            apiCall({ type: 'venda', action: 'update', id, venda: v, lucro: l });
-          }
+          setData(prev => ({ ...prev, vendas: prev.vendas.map(s => s.id === id ? { ...s, venda: v, lucro: l } : s) }));
+          apiCall({ type: 'venda', action: 'update', id, venda: v, lucro: l });
         }} onDeleteSale={(id) => {
           setData(prev => ({ ...prev, vendas: prev.vendas.filter(s => s.id !== id) }));
           apiCall({ type: 'venda', action: 'delete', id });
