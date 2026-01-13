@@ -28,12 +28,12 @@ const copyPwaFiles = () => {
 
 export default defineConfig({
   plugins: [react(), copyPwaFiles()],
-  base: './', // Caminhos relativos funcionam melhor em subdiretórios do GitHub Pages
+  // Usar './' garante que o index.html encontre o JS/CSS independente da pasta do repositório
+  base: './', 
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: ffalse
+    sourcemap: false
   },
   publicDir: false
 })
-using

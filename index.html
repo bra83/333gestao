@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg">
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="manifest" href="manifest.json" />
     <title>3D Jewelry ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -26,7 +26,13 @@
     </script>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background: #000000; }
+      body { 
+        font-family: 'Inter', sans-serif; 
+        -webkit-tap-highlight-color: transparent; 
+        background-color: #000000; 
+        margin: 0;
+      }
+      #root { min-height: 100vh; background-color: #fdfcfd; }
       .jewelry-card { background: white; border-radius: 28px; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02); }
       .jewel-gradient-amethyst { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
       .jewel-gradient-sapphire { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
@@ -48,13 +54,15 @@
 }
 </script>
 </head>
-  <body class="bg-[#fdfcfd] text-slate-900">
+  <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- O Vite vai injetar o script corretamente aqui durante o build -->
+    <script type="module" src="/index.tsx"></script>
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(err => console.log('SW error:', err));
+          // Registro usando caminho relativo para funcionar no subdiretório
+          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
         });
       }
     </script>
