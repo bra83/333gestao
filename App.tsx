@@ -61,15 +61,28 @@ const App: React.FC = () => {
     try {
       const ts = new Date().getTime();
       const settingsRes = await fetch(`${targetUrl}?type=read_settings&t=${ts}`);
-      let loadedSettings = { ...DEFAULT_SETTINGS };
       
       if (settingsRes.ok) {
          const settingsJson = await settingsRes.json();
-         loadedSettings = { ...DEFAULT_SETTINGS, ...settingsJson };
-         if (loadedSettings.vidaUtilHoras < 100) loadedSettings.vidaUtilHoras = 8000;
-         if (loadedSettings.horasTrab < 1) loadedSettings.horasTrab = 160;
-         if (loadedSettings.eficienciaFonte <= 0) loadedSettings.eficienciaFonte = 0.9;
-         setSettings(loadedSettings);
+         // Parse numbers explicitly to avoid string concatenation issues that crash Calculator
+         const safeSettings = { ...DEFAULT_SETTINGS };
+         Object.keys(settingsJson).forEach(key => {
+            const val = settingsJson[key];
+            // @ts-ignore
+            if (typeof DEFAULT_SETTINGS[key] === 'number') {
+               const num = Number(val);
+               // @ts-ignore
+               safeSettings[key] = isNaN(num) ? DEFAULT_SETTINGS[key] : num;
+            } else {
+               // @ts-ignore
+               safeSettings[key] = val;
+            }
+         });
+
+         if (safeSettings.vidaUtilHoras < 100) safeSettings.vidaUtilHoras = 8000;
+         if (safeSettings.horasTrab < 1) safeSettings.horasTrab = 160;
+         if (safeSettings.eficienciaFonte <= 0) safeSettings.eficienciaFonte = 0.9;
+         setSettings(safeSettings);
       }
 
       const dataRes = await fetch(`${targetUrl}?type=read_data&t=${ts}`);
@@ -95,7 +108,8 @@ const App: React.FC = () => {
               num = parseFloat(str);
             }
             if (!isFinite(num) || isNaN(num)) return 0;
-            while (Math.abs(num) > 20000) {
+            // Sanity check for massive numbers from bad parsing
+            while (Math.abs(num) > 200000) {
               num = num / 10;
             }
             return num;
@@ -170,8 +184,11 @@ const App: React.FC = () => {
     await apiCall({ type, action: 'delete', id: cleanId });
   };
 
+  // Helper para gerar ID único evitando colisoes que causam bugs na lista
+  const genId = (prefix: string) => `${prefix}${Date.now()}${Math.floor(Math.random() * 999)}`;
+
   const handleAddStock = async (nome: string, marca: string, peso: number, preco: number, cor: string, tipo: string) => {
-    const id = "ST" + Date.now();
+    const id = genId("ST");
     const newItem = { id, nome, marca, peso, preco, cor, tipo };
     setData(prev => ({ ...prev, estoque: [...prev.estoque, newItem] }));
     await apiCall({ type: 'estoque', action: 'create', ...newItem });
@@ -194,7 +211,7 @@ const App: React.FC = () => {
   };
 
   const handleAddSale = async (item: string, material: string, peso: number, venda: number, lucro: number, stockId?: string) => {
-    const id = "VE" + Date.now();
+    const id = genId("VE");
     const newSale = { id, data: new Date().toISOString().split('T')[0], item, material, peso, venda, lucro };
     setData(prev => ({ ...prev, vendas: [newSale, ...prev.vendas] }));
     if (stockId) {
@@ -221,7 +238,7 @@ const App: React.FC = () => {
   };
 
   const handleAddExpense = async (descricao: string, valor: number, dataStr: string) => {
-    const id = "GA" + Date.now();
+    const id = genId("GA");
     const newExpense = { id, descricao, valor, data: dataStr };
     setData(prev => ({ ...prev, gastos: [newExpense, ...prev.gastos] }));
     await apiCall({ type: 'gasto', action: 'create', ...newExpense });
@@ -337,7 +354,7 @@ const App: React.FC = () => {
             v={ViewState.TRANSACTIONS} 
             activeColor="text-rose-500" 
             hoverColor="hover:text-rose-500"
-            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transition-all"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>} 
+            icon={({active}:any) => <svg width="24" height="24" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="transition-all"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>} 
             label="Caixa" 
           />
           
