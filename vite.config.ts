@@ -3,8 +3,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 
-// Plugin simples para copiar arquivos essenciais da raiz para dist
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const copyPwaFiles = () => {
   return {
     name: 'copy-pwa-files',
@@ -18,7 +20,6 @@ const copyPwaFiles = () => {
              fs.mkdirSync(path.dirname(dest), { recursive: true });
           }
           fs.copyFileSync(src, dest);
-          console.log(`[PWA] Copied ${file} to dist`);
         }
       });
     }
@@ -27,11 +28,11 @@ const copyPwaFiles = () => {
 
 export default defineConfig({
   plugins: [react(), copyPwaFiles()],
-  base: './', // CRÍTICO: Garante que funcione em subpastas (ex: usuario.github.io/repo)
+  base: '/3dforge/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false
   },
-  publicDir: false // Mantemos false pois estamos copiando manualmente
+  publicDir: false
 })

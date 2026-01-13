@@ -3,186 +3,58 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>333 Gestão</title>
-    <meta name="theme-color" content="#ffffff" />
-    <meta name="description" content="Dashboard de controle para impressão 3D" />
-    
-    <!-- Adicionado ?v=2 para obrigar o navegador a reler o manifesto -->
-    <link rel="manifest" href="./manifest.json?v=2" />
-    
-    <!-- Google Fonts: Apenas Nunito (Moderna e Legível) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Tailwind CDN -->
+    <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg">
+    <link rel="manifest" href="./manifest.json" />
+    <title>3D Jewelry ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Nunito', 'sans-serif'],
-            },
             colors: {
-              // Paleta Moderna (Slate & Brand)
-              primary: '#0f172a', // Slate 900 (Professional Dark)
-              primaryLight: '#334155', // Slate 700
-              accent: '#3b82f6', // Blue 500 (Highlights)
-              
-              bgBody: '#f8fafc', // Slate 50
-              surface: '#ffffff', // White
-              
-              textMain: '#1e293b', // Slate 800
-              textMuted: '#64748b', // Slate 500
-              
-              success: '#10b981', // Emerald 500
-              danger: '#ef4444', // Red 500
-              warning: '#f59e0b', // Amber 500
-            },
-            boxShadow: {
-              'card': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-              'card-hover': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-              'nav': '0 -4px 20px -5px rgba(0,0,0,0.05)',
+              amethyst: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87' },
+              sapphire: { 50: '#f0f7ff', 100: '#e0effe', 200: '#bae0fd', 300: '#7cc7fb', 400: '#38a9f8', 500: '#0e8ce9', 600: '#026fc7', 700: '#0358a1', 800: '#074b85', 900: '#0c3f6e' },
             }
           }
         }
       }
     </script>
-    
-    <script>
-      // AQUI VAI APENAS O LINK (URL), NÃO O CÓDIGO!
-      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXPnoUP0I_WT0cpeR1LEt9v-he0J1Emciun85QjS0umJzVEX2SS1n8eJivGNW_bNRhkA/exec";
-    </script>
-
     <style>
-      body {
-        background-color: #f8fafc;
-        color: #1e293b;
-        margin: 0;
-        -webkit-tap-highlight-color: transparent;
-      }
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      ::-webkit-scrollbar {
-        display: none;
-      }
-      /* Hide scrollbar for IE, Edge and Firefox */
-      body {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-      }
-      #loading-spinner {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background: #f8fafc;
-      }
-      .modern-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #e2e8f0;
-        border-top-color: #0f172a;
-        border-radius: 50%;
-        animation: spin 0.8s ease-in-out infinite;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      
-      .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-
-      /* Modern Card Class Helper */
-      .app-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
-        border: 1px solid #f1f5f9;
-        transition: all 0.2s ease;
-      }
-      .app-btn {
-        transition: all 0.2s;
-        border-radius: 12px;
-        font-weight: 700;
-      }
-      .app-btn:active {
-        transform: scale(0.98);
-      }
-      .app-input {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.75rem;
-        transition: all 0.2s;
-      }
-      .app-input:focus {
-        background-color: #fff;
-        border-color: #3b82f6;
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-      }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+      body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+      .jewelry-card { background: white; border-radius: 28px; border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02); }
+      .jewel-gradient-amethyst { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
+      .jewel-gradient-sapphire { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+      .jewel-gradient-emerald { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "recharts": "https://esm.sh/recharts@^3.6.0",
+    "url": "https://esm.sh/url@^0.11.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "path": "https://esm.sh/path@^0.12.7",
     "fs": "https://esm.sh/fs@^0.0.1-security",
-    "path": "https://esm.sh/path@^0.12.7"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
 </head>
-  <body>
-    <div id="root">
-      <div id="loading-spinner">
-        <div class="modern-spinner"></div>
-      </div>
-    </div>
-    
+  <body class="bg-[#fdfcfd] text-slate-900">
+    <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
-    
     <script>
-      // Script melhorado para registrar o SW e lidar com atualizações
-      if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
+      if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-              console.log('SW Registrado no escopo:', reg.scope);
-              
-              // Se houver um SW esperando, força a atualização
-              if (reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-              }
-              
-              reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                installingWorker.onstatechange = () => {
-                  if (installingWorker.state === 'installed') {
-                    if (navigator.serviceWorker.controller) {
-                      console.log('Nova versão disponível!');
-                    }
-                  }
-                };
-              };
-            })
-            .catch(err => console.log('SW Falhou:', err));
-        });
-
-        // Recarrega a página se o SW mudar (garante que o usuário veja a versão nova)
-        let refreshing;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          window.location.reload();
-          refreshing = true;
+          navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
         });
       }
     </script>
