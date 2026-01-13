@@ -1,64 +1,144 @@
 
 import React from 'react';
 import { AppData, ViewState } from '../types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-export const DashboardView: React.FC<{ data: AppData; onNavigate: (v: ViewState) => void }> = ({ data, onNavigate }) => {
+interface DashboardViewProps {
+  data: AppData;
+  onNavigate: (view: ViewState) => void;
+}
+
+export const DashboardView: React.FC<DashboardViewProps> = ({ data, onNavigate }) => {
   const totalSales = data.vendas.reduce((acc, curr) => acc + curr.venda, 0);
-  const grossProfit = data.vendas.reduce((acc, curr) => acc + curr.lucro, 0);
   const totalExpenses = data.gastos.reduce((acc, curr) => acc + curr.valor, 0);
-  const netProfit = grossProfit - totalExpenses;
+  const netProfit = data.vendas.reduce((acc, curr) => acc + curr.lucro, 0) - totalExpenses;
   const recentSales = data.vendas.slice(0, 5).reverse();
+
+  // Helper para formatar moeda
+  const fmt = (v: number) => `R$ ${v.toFixed(2)}`;
 
   return (
     <div className="space-y-6">
+      
+      {/* CARD DO LUCRO (DIAMANTE) - O destaque principal */}
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-cyan-100 shadow-lg shadow-cyan-100/50 p-6 transition-all duration-300 hover:shadow-cyan-200">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+           {/* Icone Diamante Gigante de Fundo */}
+           <svg width="100" height="100" viewBox="0 0 24 24" fill="currentColor" className="text-cyan-500">
+             <path d="M12 2L2 7l10 15 10-15-10-5zM3.8 7L12 3.8 20.2 7 12 19.5 3.8 7z"/>
+           </svg>
+        </div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-2 bg-cyan-50 rounded-lg text-cyan-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/></svg>
+            </div>
+            <span className="text-cyan-600/70 text-xs font-bold uppercase tracking-wider">Resultado Líquido</span>
+          </div>
+          
+          <div className={`text-4xl font-black tracking-tight ${netProfit >= 0 ? 'text-cyan-600' : 'text-rose-500'}`}>
+            {fmt(netProfit)}
+          </div>
+          <p className="text-slate-400 text-xs mt-2 font-medium">
+            Seu tesouro acumulado (Lucro Real)
+          </p>
+        </div>
+      </div>
+
+      {/* GRID RECEITA E DESPESA */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="jewelry-card p-5 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-20 h-20 jewel-gradient-sapphire opacity-10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Receita</span>
-          <div className="text-2xl font-black text-slate-800 mt-1">R$ {totalSales.toLocaleString()}</div>
+        
+        {/* RECEITA (ESMERALDA) */}
+        <div className="app-card p-4 border-l-4 border-emerald-400 hover:bg-emerald-50/10 transition-colors">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="text-emerald-500" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-3 5h-6l3 5-3 5 9 5 9-5-3-5 3-5h-6z"/></svg>
+            <span className="text-slate-400 text-[10px] font-bold uppercase">Entradas</span>
+          </div>
+          <div className="text-xl font-extrabold text-emerald-600 truncate">{fmt(totalSales)}</div>
         </div>
-        <div className="jewelry-card p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-20 h-20 jewel-gradient-amethyst opacity-10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Custos</span>
-          <div className="text-2xl font-black text-rose-500 mt-1">R$ {totalExpenses.toLocaleString()}</div>
+
+        {/* DESPESAS (RUBI) */}
+        <div className="app-card p-4 border-l-4 border-rose-500 hover:bg-rose-50/10 transition-colors">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="text-rose-500" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6 6 2-5 4 2 6-6-4-6 4 2-6-5-4 6-2z"/></svg>
+            <span className="text-slate-400 text-[10px] font-bold uppercase">Saídas</span>
+          </div>
+          <div className="text-xl font-extrabold text-rose-500 truncate">- {fmt(totalExpenses)}</div>
         </div>
       </div>
 
-      <div className="jewelry-card p-8 bg-gradient-to-br from-white/80 to-slate-50/50 border-white/60 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-40 h-40 jewel-gradient-emerald opacity-20 blur-3xl"></div>
-        <div className="flex justify-between items-center">
-          <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Lucro Líquido</span>
-          <span className="bg-emerald-500/10 text-emerald-600 text-[10px] px-3 py-1 rounded-full font-bold">Safira Pura</span>
+      {/* GRÁFICO (AMETISTA) */}
+      <div className="app-card p-5 border-t-4 border-t-violet-400">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-slate-700 font-bold text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+              Vendas Recentes
+            </h3>
+            <span className="text-[10px] bg-violet-100 text-violet-600 px-2 py-1 rounded-full font-bold">Histórico</span>
+          </div>
+          
+          <div className="h-[180px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={recentSales}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis 
+                  dataKey="item" 
+                  tick={{fill: '#94a3b8', fontSize: 10}} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  interval={0}
+                  tickFormatter={(val) => val.length > 8 ? val.substring(0,8)+'...' : val}
+                />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', color: '#0f172a'}}
+                  itemStyle={{color: '#8b5cf6', fontWeight: 'bold'}}
+                  formatter={(val: number) => [fmt(val), 'Venda']}
+                  labelStyle={{color: '#64748b', fontSize: '12px', marginBottom: '4px'}}
+                />
+                <Bar 
+                  dataKey="venda" 
+                  fill="url(#colorUv)" 
+                  radius={[6, 6, 6, 6]} 
+                  barSize={24}
+                >
+                  {/* Gradiente Ametista para as barras */}
+                </Bar>
+                <defs>
+                  <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a78bfa" stopOpacity={1}/>
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={1}/>
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+      </div>
+
+      {/* CTA ESTOQUE (TOPÁZIO/OURO) */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-200">
+        <div className="absolute -right-6 -bottom-6 opacity-20">
+            <svg width="120" height="120" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="4" /></svg>
         </div>
-        <div className="text-5xl font-black text-slate-900 mt-2 tracking-tighter">
-          R$ {netProfit.toLocaleString()}
+        
+        <div className="p-6 relative z-10">
+          <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            Gerenciar Estoque
+          </h3>
+          <p className="text-amber-100 text-xs mb-4">
+            Você possui <strong className="text-white text-sm">{data.estoque.length}</strong> materiais preciosos cadastrados.
+          </p>
+          <button 
+            onClick={() => onNavigate(ViewState.INVENTORY)}
+            className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white py-3 rounded-xl text-sm font-bold transition-all"
+          >
+            Abrir Inventário
+          </button>
         </div>
       </div>
 
-      <div className="jewelry-card p-6 h-64 border-white/40">
-          <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6">Fluxo de Pedras</h3>
-          <ResponsiveContainer width="100%" height="80%">
-            <BarChart data={recentSales}>
-              <XAxis dataKey="item" hide />
-              <Tooltip 
-                cursor={{fill: 'rgba(0,0,0,0.02)'}}
-                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.05)', fontSize: '12px', fontWeight: 'bold' }}
-              />
-              <Bar dataKey="venda" fill="#a855f7" radius={[10, 10, 10, 10]} barSize={12} />
-            </BarChart>
-          </ResponsiveContainer>
-      </div>
-
-      <div className="jewelry-card p-6 flex justify-between items-center group cursor-pointer active:scale-95 transition-transform" onClick={() => onNavigate(ViewState.INVENTORY)}>
-        <div>
-          <h3 className="text-sm font-bold text-slate-800">Cofre de Materiais</h3>
-          <p className="text-xs text-slate-400">{data.estoque.length} gemas cadastradas</p>
-        </div>
-        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-amethyst-500 group-hover:bg-amethyst-50 transition-colors">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12l5 5L20 7"/></svg>
-        </div>
-      </div>
     </div>
   );
 };
