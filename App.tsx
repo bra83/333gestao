@@ -55,8 +55,11 @@ const App: React.FC = () => {
   const apiCall = async (payload: any) => {
     if (!apiUrl) return;
     const formData = new FormData();
-    Object.keys(payload).forEach(k => formData.append(k, String(payload[k])));
-    try { await fetch(apiUrl, { method: 'POST', body: formData }); } catch (e) { showToast("Modo Offline"); }
+    Object.keys(payload).forEach(k => formData.append(k, String(payload[k] ?? "")));
+    try { 
+      const res = await fetch(apiUrl, { method: 'POST', body: formData });
+      if (!res.ok) throw new Error("Sync Error");
+    } catch (e) { showToast("Erro ao Sincronizar"); }
   };
 
   const handleAddStock = async (n: any, m: any, p: any, pr: any, c: any, t: any) => {
@@ -67,8 +70,12 @@ const App: React.FC = () => {
   };
 
   const handleUpdateStock = async (id: string, up: any) => {
-    setData(prev => ({ ...prev, estoque: prev.estoque.map(i => i.id === id ? { ...i, ...up } : i) }));
-    await apiCall({ type: 'estoque', action: 'update', id, ...up });
+    const currentItem = data.estoque.find(i => i.id === id);
+    if (!currentItem) return;
+    const updatedItem = { ...currentItem, ...up };
+    
+    setData(prev => ({ ...prev, estoque: prev.estoque.map(i => i.id === id ? updatedItem : i) }));
+    await apiCall({ type: 'estoque', action: 'update', ...updatedItem });
   };
 
   const handleDeleteStock = async (id: string) => {
