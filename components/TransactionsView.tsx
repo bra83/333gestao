@@ -36,7 +36,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {activeTab === 'sales' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center px-2">
-             <h3 className="text-slate-900 font-black text-xl uppercase tracking-tighter">HistÃ³rico de Vendas</h3>
+             <h3 className="text-slate-900 font-black text-xl uppercase tracking-tighter">Histórico de Vendas</h3>
              <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-full uppercase tracking-widest">{sales.length} Entradas</span>
           </div>
 
@@ -47,7 +47,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 <div className="flex justify-between items-start">
                    <div className="space-y-1">
                       <div className="text-slate-900 font-black text-lg tracking-tight leading-none">{sale.item}</div>
-                      <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{sale.data} â€¢ {sale.material}</div>
+                      <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{sale.data} • {sale.material}</div>
                    </div>
                    <div className="text-right">
                       <div className="text-slate-900 font-black text-2xl tracking-tighter">{fmtMoney(sale.venda)}</div>
@@ -70,7 +70,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         <div className="space-y-6">
           <div className="jewelry-card overflow-hidden bg-rose-500 border-0 shadow-xl shadow-rose-200">
              <div className="p-8 flex flex-col items-center justify-center text-center text-white">
-                <span className="text-white/70 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Total de SaÃ­das</span>
+                <span className="text-white/70 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Total de Saídas</span>
                 <span className="text-5xl font-black tracking-tighter">{fmtMoney(totalExpenses)}</span>
              </div>
           </div>
@@ -79,7 +79,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
              <h3 className="text-slate-900 font-black text-sm uppercase tracking-widest mb-6">Registrar Novo Gasto</h3>
              <div className="space-y-4">
                 <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-2">DescriÃ§Ã£o</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-2">Descrição</label>
                   <input className="w-full bg-transparent border-none p-0 text-slate-900 font-bold focus:ring-0 focus:outline-none" placeholder="Ex: Conta de Luz Jan" value={newExpDesc} onChange={e => setNewExpDesc(e.target.value)} />
                 </div>
                 <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
