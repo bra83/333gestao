@@ -103,7 +103,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
   };
 
   const handleSave = () => {
-    if (!itemName) return alert('Nome do Projeto obrigatÃ³rio!');
+    if (!itemName) return alert('Nome do Projeto obrigatório!');
     if (costs.totalWeight <= 0) return alert('Adicione peso aos filamentos!');
 
     const materialsData = selectedFilaments
@@ -130,7 +130,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
       <div className="jewelry-card p-6 shadow-sm border-slate-200">
         <h2 className="text-slate-900 font-black text-xl uppercase mb-6 tracking-tighter border-b-2 border-slate-100 pb-3 flex items-center gap-2">
           <span className="w-2 h-6 jewel-gradient-amethyst rounded-full"></span>
-          Mesa de CriaÃ§Ã£o
+          Mesa de Criação
         </h2>
         
         <div className="space-y-6">
@@ -178,7 +178,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
               <select className="w-full p-4 rounded-2xl text-xs font-bold text-slate-900" value={paintingType} onChange={e => setPaintingType(e.target.value as any)}>
                 <option value="none">Nenhum</option>
                 <option value="simple">Simples</option>
-                <option value="medium">MÃ©dio</option>
+                <option value="medium">Médio</option>
                 <option value="pro">Profissional</option>
               </select>
             </div>
@@ -188,21 +188,21 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
 
       <div className="jewelry-card overflow-hidden bg-slate-900 border-0 shadow-2xl">
         <div className="jewel-gradient-amethyst p-5 text-center">
-            <h3 className="text-white font-black uppercase tracking-[0.4em] text-[10px]">RelatÃ³rio de Custos</h3>
+            <h3 className="text-white font-black uppercase tracking-[0.4em] text-[10px]">Relatório de Custos</h3>
         </div>
         
         <div className="p-8 space-y-4 text-sm font-semibold text-slate-400">
           <Row label="Gemas (Materiais)" value={costs.materialTotal} sub={`${costs.totalWeight}g totais`} />
-          <Row label="Corrente ElÃ©trica" value={costs.energyTotal} />
-          <Row label="Desgaste MÃ¡quina" value={costs.machineTotal} />
-          <Row label="MÃ£o de Obra" value={costs.laborTotal} />
+          <Row label="Corrente Elétrica" value={costs.energyTotal} />
+          <Row label="Desgaste Máquina" value={costs.machineTotal} />
+          <Row label="Mão de Obra" value={costs.laborTotal} />
           <Row label="Custos de Guilda" value={costs.fixedTotal} />
           
           <div className="border-t border-white/10 my-6 pt-4">
             <div className="flex justify-between text-lg text-white font-black tracking-tighter">
               <span className="uppercase text-xs tracking-widest text-slate-500 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-amethyst-500 animate-pulse"></span>
-                Custo de ProduÃ§Ã£o
+                Custo de Produção
               </span>
               <span>R$ {costs.totalCost.toFixed(2)}</span>
             </div>
@@ -210,7 +210,7 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
         </div>
         
         <div className="bg-white/5 p-8 text-center border-t border-white/10 backdrop-blur-sm">
-            <span className="block text-[10px] text-amethyst-400 uppercase tracking-[0.2em] font-black mb-2">PreÃ§o de Venda Sugerido</span>
+            <span className="block text-[10px] text-amethyst-400 uppercase tracking-[0.2em] font-black mb-2">Preço de Venda Sugerido</span>
             <div className="text-6xl font-black text-white mb-3 tracking-tighter">
               <span className="text-2xl align-top mr-1 text-amethyst-500">R$</span>
               {costs.finalPrice.toFixed(2)}
