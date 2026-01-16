@@ -236,4 +236,4 @@ const Row = ({ label, value, sub }: { label: string, value: number, sub?: string
     </div>
     <span className="text-slate-100 font-mono">R$ {value.toFixed(2)}</span>
   </div>
-);
+); 
