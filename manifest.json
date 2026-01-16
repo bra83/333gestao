@@ -1,7 +1,7 @@
 
 {
-  "name": "savepoint Quest",
-  "short_name": "savepoint Quest",
+  "name": "Savepoint Quest",
+  "short_name": "Savepoint",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -9,17 +9,16 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://github.com/bra83/333gestao/blob/main/logomarca.png",
+      "src": "https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://github.com/bra83/333gestao/blob/main/logomarca.png",
+      "src": "https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
   ]
 }
- 
