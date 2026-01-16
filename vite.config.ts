@@ -12,13 +12,13 @@ const copyPwaFiles = () => {
     name: 'copy-pwa-files',
     closeBundle: async () => {
       const files = ['sw.js', 'manifest.json'];
+      const distDir = path.resolve(__dirname, 'dist');
+      if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
+      
       files.forEach(file => {
         const src = path.resolve(__dirname, file);
-        const dest = path.resolve(__dirname, 'dist', file);
+        const dest = path.resolve(distDir, file);
         if (fs.existsSync(src)) {
-          if (!fs.existsSync(path.dirname(dest))) {
-             fs.mkdirSync(path.dirname(dest), { recursive: true });
-          }
           fs.copyFileSync(src, dest);
         }
       });
@@ -28,12 +28,19 @@ const copyPwaFiles = () => {
 
 export default defineConfig({
   plugins: [react(), copyPwaFiles()],
-  // Usar './' garante que o index.html encontre o JS/CSS independente da pasta do repositório
   base: './', 
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false
-  },
-  publicDir: false
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000, // Aumenta o limite do aviso para 1MB
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom'],
+          'charts': ['recharts']
+        }
+      }
+    }
+  }
 })
