@@ -2,6 +2,7 @@
 {
   "name": "Savepoint Quest",
   "short_name": "Savepoint",
+  "id": "/",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
