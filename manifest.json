@@ -1,7 +1,7 @@
 
 {
-  "name": "3D Jewelry ERP",
-  "short_name": "3D Jewelry",
+  "name": "savepoint Quest",
+  "short_name": "savepoint Quest",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
