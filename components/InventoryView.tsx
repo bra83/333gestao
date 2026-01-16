@@ -48,7 +48,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ stock, onAddStock,
           <div className="absolute top-0 left-0 w-full h-1 jewel-gradient-emerald"></div>
           <div className="grid grid-cols-2 gap-5">
               <div className="col-span-2">
-                <label className="text-[11px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest block">IdentificaÃ§Ã£o da Gema</label>
+                <label className="text-[11px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest block">Identificação da Gema</label>
                 <input className="w-full p-4 rounded-2xl text-sm font-bold text-slate-900" value={newItemName} onChange={e => setNewItemName(e.target.value)} placeholder="Ex: Vermelho Rubi" />
               </div>
               <div>
@@ -66,7 +66,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ stock, onAddStock,
                 <input type="number" className="w-full p-4 rounded-2xl text-sm font-bold text-slate-900" value={newItemWeight} onChange={e => setNewItemWeight(e.target.value)} />
               </div>
               <div>
-                <label className="text-[11px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest block">PreÃ§o (R$)</label>
+                <label className="text-[11px] font-black uppercase text-slate-400 mb-2 ml-1 tracking-widest block">Preço (R$)</label>
                 <input type="number" className="w-full p-4 rounded-2xl text-sm font-bold text-slate-900" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} />
               </div>
               <div className="col-span-2">
