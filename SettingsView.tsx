@@ -1,98 +1,152 @@
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg">
-    <link rel="manifest" href="manifest.json" />
-    <title>3D Jewelry ERP</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUoGaStu2m-ytdBq8gp2kanUpmt9rd_WB3Dedi19Cu0NBbZLAD4nsYVDecCzwTOv31YA/exec"; 
-      
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              amethyst: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87' },
-              sapphire: { 50: '#f0f7ff', 100: '#e0effe', 200: '#bae0fd', 300: '#7cc7fb', 400: '#38a9f8', 500: '#0e8ce9', 600: '#026fc7', 700: '#0358a1', 800: '#074b85', 900: '#0c3f6e' },
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-      body { 
-        font-family: 'Inter', sans-serif; 
-        -webkit-tap-highlight-color: transparent; 
-        background-color: #f1f5f9; /* Cinza mais escuro para o fundo global */
-        margin: 0;
-      }
-      #root { min-height: 100vh; background-color: #f1f5f9; }
-      
-      .jewelry-card { 
-        background: white; 
-        border-radius: 24px; 
-        border: 1px solid #e2e8f0; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      }
+import React, { useState } from 'react';
+import { Settings } from '../types';
 
-      /* Input styling improvements */
-      input, select, textarea {
-        background-color: #f8fafc !important;
-        border: 2px solid #e2e8f0 !important;
-        transition: all 0.2s ease-in-out;
-      }
-      input:focus, select:focus {
-        border-color: #a855f7 !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1) !important;
-        outline: none;
-      }
-
-      .jewel-gradient-amethyst { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
-      .jewel-gradient-sapphire { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-      .jewel-gradient-emerald { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-      
-      /* Botões de navegação */
-      .nav-active {
-        background: #f1f5f9;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-      }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "url": "https://esm.sh/url@^0.11.4",
-    "path": "https://esm.sh/path@^0.12.7",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "fs": "https://esm.sh/fs@^0.0.1-security"
-  }
+interface SettingsViewProps {
+  settings: Settings;
+  onSave: (newSettings: Settings) => void;
+  apiUrl: string;
+  onUrlChange: (url: string) => void;
+  lastError?: string | null;
+  onRetry?: () => void;
+  onMaintenance?: () => void;
+  canInstall?: boolean;
+  onInstall?: () => void;
 }
-</script>
-</head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW Registered'))
-            .catch(err => console.log('SW Registration failed', err));
-        });
-      }
-    </script>
-  </body>
-</html>
+
+export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, apiUrl, onUrlChange, lastError, onRetry, onMaintenance, canInstall, onInstall }) => {
+  const [formData, setFormData] = useState<Settings>(settings);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+
+  const handleChange = (key: keyof Settings, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: Number(value) }));
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onUrlChange(e.target.value);
+  };
+
+  return (
+    <div className="space-y-6 pb-24">
+      {/* PWA Install Section */}
+      {(canInstall || isIOS) && (
+        <div className="jewelry-card p-6 bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl shadow-slate-200">
+           <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-emerald-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              </div>
+              <div>
+                 <h3 className="font-black text-sm uppercase tracking-widest">Instalar Aplicativo</h3>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Acesso rápido e offline</p>
+              </div>
+           </div>
+           
+           {canInstall && (
+             <button onClick={onInstall} className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black text-[11px] uppercase py-3 rounded-xl tracking-widest active:scale-95 transition-all shadow-lg">
+               Adicionar à Tela Inicial
+             </button>
+           )}
+
+           {isIOS && (
+             <div className="bg-white/5 rounded-xl p-3 text-center border border-white/10">
+               <p className="text-[10px] text-slate-300 font-bold uppercase tracking-wide leading-relaxed">
+                 Toque em <span className="inline-block px-1"><svg className="inline" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M12 3v12M17 8l-5-5-5 5"/></svg></span> e selecione <br/>"Adicionar à Tela de Início"
+               </p>
+             </div>
+           )}
+        </div>
+      )}
+
+      <div className="jewelry-card p-6 shadow-sm border-slate-200">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-slate-900 font-black text-xl uppercase tracking-tighter flex items-center gap-2">
+            <span className="w-2 h-6 jewel-gradient-sapphire rounded-full"></span>
+            Conectividade
+          </h3>
+          <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border ${lastError ? 'bg-rose-50 text-rose-500 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+            {lastError ? 'Desconectado' : 'Sincronizado'}
+          </span>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="text-slate-500 text-[11px] font-black uppercase tracking-widest mb-2 block ml-1">Google Apps Script URL</label>
+            <input 
+              className="w-full p-4 rounded-2xl text-xs font-mono font-bold" 
+              value={apiUrl} 
+              onChange={handleUrlChange}
+              placeholder="https://script.google.com/macros/s/..."
+            />
+          </div>
+          
+          <div className="flex gap-3">
+              <button onClick={onRetry} className="flex-1 bg-slate-900 text-white font-black text-[11px] uppercase py-4 rounded-2xl tracking-widest active:scale-95 transition-all shadow-lg">Sincronizar</button>
+              <button onClick={() => window.open('https://sheets.new', '_blank')} className="flex-1 bg-white border-2 border-slate-200 text-slate-600 font-black text-[11px] uppercase py-4 rounded-2xl tracking-widest active:scale-95 transition-all">Ver Planilha</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="jewelry-card p-8 shadow-sm border-slate-200">
+        <h3 className="text-slate-900 font-black text-xl uppercase tracking-tighter mb-8 border-b-2 border-slate-100 pb-4">Ajustes da Oficina</h3>
+        
+        <div className="space-y-10">
+          <Section title="Mecânica & Energia">
+             <div className="grid grid-cols-2 gap-5">
+               <Input label="Preço da Máquina" val={formData.precoMaq} onChange={v => handleChange('precoMaq', v)} />
+               <Input label="Vida Útil (Horas)" val={formData.vidaUtilHoras || 8000} onChange={v => handleChange('vidaUtilHoras', v)} />
+               <Input label="Manut. Mensal" val={formData.manutencaoMensal || 20} onChange={v => handleChange('manutencaoMensal', v)} />
+               <Input label="Potência (W)" val={formData.potencia} onChange={v => handleChange('potencia', v)} />
+               <Input label="Preço kWh" val={formData.kwh} step={0.01} onChange={v => handleChange('kwh', v)} />
+               <Input label="Markup (x)" val={formData.markup} step={0.1} onChange={v => handleChange('markup', v)} />
+             </div>
+          </Section>
+
+          <Section title="Custos de Guilda (Mensais)">
+             <div className="grid grid-cols-3 gap-3">
+               <div className="col-span-3">
+                  <Input label="Horas de Trabalho Mensais" val={formData.horasTrab} onChange={v => handleChange('horasTrab', v)} />
+               </div>
+               <Input label="Impostos" val={formData.mei} onChange={v => handleChange('mei', v)} />
+               <Input label="Aluguel" val={formData.aluguel} onChange={v => handleChange('aluguel', v)} />
+               <Input label="Software" val={formData.softwares} onChange={v => handleChange('softwares', v)} />
+             </div>
+          </Section>
+
+          <Section title="Habilidades & Processos">
+             <div className="grid grid-cols-2 gap-5">
+               <Input label="Valor Hora Própria" val={formData.valorHoraTrabalho || 25} onChange={v => handleChange('valorHoraTrabalho', v)} />
+               <Input label="Taxa de Risco (%)" val={formData.risco || 10} onChange={v => handleChange('risco', v)} />
+               <Input label="Prep. Projeto (min)" val={formData.tempoPreparacao || 15} onChange={v => handleChange('tempoPreparacao', v)} />
+               <Input label="Pós-Proc. (min)" val={formData.tempoPosProcessamento || 15} onChange={v => handleChange('tempoPosProcessamento', v)} />
+             </div>
+          </Section>
+
+          <button onClick={() => onSave(formData)} className="w-full jewel-gradient-amethyst text-white font-black uppercase py-6 rounded-[32px] text-sm tracking-[0.4em] shadow-xl active:scale-95 transition-all mt-10">
+            SALVAR PARÂMETROS
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Section = ({ title, children }: { title: string, children?: React.ReactNode }) => (
+  <div className="space-y-6">
+    <h4 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3">
+      {title}
+      <div className="flex-1 h-[1px] bg-slate-100"></div>
+    </h4>
+    {children}
+  </div>
+);
+
+const Input = ({ label, val, onChange, step }: { label: string, val: number, onChange: (v: string) => void, step?: number }) => (
+  <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 group focus-within:border-amethyst-300 focus-within:bg-white transition-all">
+    <label className="text-slate-500 text-[9px] font-black block mb-2 uppercase tracking-widest">{label}</label>
+    <input 
+      type="number" step={step}
+      className="w-full bg-transparent border-none p-0 text-slate-900 text-lg font-black focus:ring-0 focus:outline-none placeholder:text-slate-300" 
+      value={val} onChange={e => onChange(e.target.value)} 
+    />
+  </div>
+);
