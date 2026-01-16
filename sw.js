@@ -1,5 +1,5 @@
 
-const CACHE_NAME = '3d-erp-v17.0';
+const CACHE_NAME = 'savepoint-quest-v18.0';
 const OFFLINE_URL = './index.html';
 
 const assets = [
