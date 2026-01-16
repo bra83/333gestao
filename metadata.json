@@ -1,5 +1,6 @@
+
 {
-  "name": "333",
+  "name": "Savepoint Quest",
   "description": "Sistema de gestão para empresa de impressão 3D (PWA). Controle de estoque, cálculo de custos e fluxo de caixa integrado ao Google Sheets.",
   "requestFramePermissions": []
 }
