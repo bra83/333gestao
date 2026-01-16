@@ -2,22 +2,22 @@
 {
   "name": "3D Jewelry ERP",
   "short_name": "3D Jewelry",
-  "start_url": ".",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg",
+      "src": "https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://raw.githubusercontent.com/bra83/3dforge/main/logo.jpg",
+      "src": "https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
