@@ -58,13 +58,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, ap
         <h3 className="text-slate-900 font-black text-xl uppercase tracking-tighter mb-8 border-b-2 border-slate-100 pb-4">Ajustes da Oficina</h3>
         
         <div className="space-y-10">
-          <Section title="MecÃ¢nica & Energia">
+          <Section title="Mecânica & Energia">
              <div className="grid grid-cols-2 gap-5">
-               <Input label="PreÃ§o da MÃ¡quina" val={formData.precoMaq} onChange={v => handleChange('precoMaq', v)} />
-               <Input label="Vida Ãštil (Horas)" val={formData.vidaUtilHoras || 8000} onChange={v => handleChange('vidaUtilHoras', v)} />
+               <Input label="Preço da Máquina" val={formData.precoMaq} onChange={v => handleChange('precoMaq', v)} />
+               <Input label="Vida Útil (Horas)" val={formData.vidaUtilHoras || 8000} onChange={v => handleChange('vidaUtilHoras', v)} />
                <Input label="Manut. Mensal" val={formData.manutencaoMensal || 20} onChange={v => handleChange('manutencaoMensal', v)} />
-               <Input label="PotÃªncia (W)" val={formData.potencia} onChange={v => handleChange('potencia', v)} />
-               <Input label="PreÃ§o kWh" val={formData.kwh} step={0.01} onChange={v => handleChange('kwh', v)} />
+               <Input label="Potência (W)" val={formData.potencia} onChange={v => handleChange('potencia', v)} />
+               <Input label="Preço kWh" val={formData.kwh} step={0.01} onChange={v => handleChange('kwh', v)} />
                <Input label="Markup (x)" val={formData.markup} step={0.1} onChange={v => handleChange('markup', v)} />
              </div>
           </Section>
@@ -82,15 +82,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSave, ap
 
           <Section title="Habilidades & Processos">
              <div className="grid grid-cols-2 gap-5">
-               <Input label="Valor Hora PrÃ³pria" val={formData.valorHoraTrabalho || 25} onChange={v => handleChange('valorHoraTrabalho', v)} />
+               <Input label="Valor Hora Própria" val={formData.valorHoraTrabalho || 25} onChange={v => handleChange('valorHoraTrabalho', v)} />
                <Input label="Taxa de Risco (%)" val={formData.risco || 10} onChange={v => handleChange('risco', v)} />
                <Input label="Prep. Projeto (min)" val={formData.tempoPreparacao || 15} onChange={v => handleChange('tempoPreparacao', v)} />
-               <Input label="PÃ³s-Proc. (min)" val={formData.tempoPosProcessamento || 15} onChange={v => handleChange('tempoPosProcessamento', v)} />
+               <Input label="Pós-Proc. (min)" val={formData.tempoPosProcessamento || 15} onChange={v => handleChange('tempoPosProcessamento', v)} />
              </div>
           </Section>
 
           <button onClick={() => onSave(formData)} className="w-full jewel-gradient-amethyst text-white font-black uppercase py-6 rounded-[32px] text-sm tracking-[0.4em] shadow-xl active:scale-95 transition-all mt-10">
-            SALVAR PARÃ‚METROS
+            SALVAR PARÂMETROS
           </button>
         </div>
       </div>
