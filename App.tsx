@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, AppData, ViewState, StockItem } from './types';
 import { DEFAULT_SETTINGS } from './constants';
@@ -125,10 +126,10 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-32 bg-[#fdfcfd]">
       <header className="sticky top-0 px-6 py-5 z-40 flex justify-between items-center bg-white/70 backdrop-blur-xl border-b border-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 jewel-gradient-amethyst rounded-xl rotate-12 shadow-xl flex items-center justify-center">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <div className="w-10 h-10 jewel-gradient-amethyst rounded-xl rotate-12 shadow-xl flex items-center justify-center overflow-hidden">
+             <img src="https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-amethyst-600 via-sapphire-500 to-emerald-600">3D JEWELRY</h1>
+          <h1 className="text-xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-amethyst-600 via-sapphire-500 to-emerald-600 uppercase">SAVEPOINT QUEST</h1>
         </div>
         <button onClick={fetchData} className={`p-2 rounded-full transition-all ${loading ? 'animate-spin text-amethyst-500' : 'active:scale-90 text-slate-400'}`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
