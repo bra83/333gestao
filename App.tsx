@@ -15,6 +15,29 @@ const App: React.FC = () => {
   const [apiUrl, setApiUrl] = useState<string>(() => localStorage.getItem('APPS_SCRIPT_URL') || (window as any).APPS_SCRIPT_URL || "");
   const [loading, setLoading] = useState<boolean>(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -162,7 +185,6 @@ const App: React.FC = () => {
           
           setData(prev => ({ ...prev, vendas: [s, ...prev.vendas] }));
           
-          // Desconta cada filamento individualmente do estoque
           for (const m of mats) {
             const st = data.estoque.find(x => x.id === m.stockId);
             if (st) {
@@ -192,9 +214,19 @@ const App: React.FC = () => {
           setData(prev => ({ ...prev, gastos: prev.gastos.filter(g => g.id !== id) }));
           await apiCall({ type: 'gasto', action: 'delete', id });
         }} />}
-        {view === ViewState.SETTINGS && <SettingsView settings={settings} onSave={async (s) => {
-          setSettings(s); await apiCall({ type: 'save_settings', ...s }); showToast("Ajustes Salvos");
-        }} apiUrl={apiUrl} onUrlChange={(val) => { setApiUrl(val); localStorage.setItem('APPS_SCRIPT_URL', val); }} onRetry={fetchData} />}
+        {view === ViewState.SETTINGS && (
+          <SettingsView 
+            settings={settings} 
+            onSave={async (s) => {
+              setSettings(s); await apiCall({ type: 'save_settings', ...s }); showToast("Ajustes Salvos");
+            }} 
+            apiUrl={apiUrl} 
+            onUrlChange={(val) => { setApiUrl(val); localStorage.setItem('APPS_SCRIPT_URL', val); }} 
+            onRetry={fetchData}
+            canInstall={!!deferredPrompt}
+            onInstall={handleInstallApp}
+          />
+        )}
       </main>
 
       <nav className="fixed bottom-8 left-6 right-6 h-20 bg-white/90 backdrop-blur-2xl border border-white/40 rounded-[35px] flex justify-around px-4 shadow-2xl z-50">
