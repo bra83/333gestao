@@ -1,48 +1,43 @@
 
-const CACHE_NAME = '3d-erp-RESET-v20.0'; // Nome alterado para forçar atualização total
+const CACHE_NAME = '3d-erp-v17.0';
+const OFFLINE_URL = './index.html';
 
-// Caminhos relativos para compatibilidade com GitHub Pages
 const assets = [
   './',
   './index.html',
   './manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap'
+  'https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png'
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Força o SW a assumir imediatamente
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Caching assets novo repo');
-      return cache.addAll(assets);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
   );
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        // Apaga QUALQUER cache que não seja o atual
-        if (key !== CACHE_NAME) {
-          console.log('[SW] Apagando cache antigo:', key);
-          return caches.delete(key);
-        }
-      })
-    )).then(() => self.clients.claim())
+      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+    ))
   );
 });
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  if (url.hostname.includes('script.google.com')) return;
+  // Ignora chamadas de API (Google Scripts) - sempre rede
+  if (url.hostname.includes('script.google.com') || url.search.includes('type=')) {
+    return event.respondWith(fetch(event.request));
+  }
 
+  // Estratégia Stale-while-revalidate para recursos do app
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
       const fetchPromise = fetch(event.request).then(networkResponse => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseToCache);
@@ -50,9 +45,11 @@ self.addEventListener('fetch', event => {
         }
         return networkResponse;
       }).catch(() => {
-        // Fallback silencioso
+        // Se falhar a rede e não tiver cache, tenta retornar o index.html (SPA fallback)
+        if (event.request.mode === 'navigate') {
+          return caches.match(OFFLINE_URL);
+        }
       });
-
       return cachedResponse || fetchPromise;
     })
   );
