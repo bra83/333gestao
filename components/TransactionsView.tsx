@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sale, Expense } from '../types';
 
@@ -17,97 +16,79 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   onAddExpense, onUpdateExpense, onDeleteExpense
 }) => {
   const [activeTab, setActiveTab] = useState<'sales' | 'expenses'>('sales');
-  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
-  const [editSalePrice, setEditSalePrice] = useState('');
-  const [editSaleProfit, setEditSaleProfit] = useState('');
   const [newExpDesc, setNewExpDesc] = useState('');
   const [newExpVal, setNewExpVal] = useState('');
-  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.valor, 0);
+  const [editingExp, setEditingExp] = useState<string | null>(null);
 
-  const fmtMoney = (val: number) => `R$ ${val.toFixed(2)}`;
+  const fmtMoney = (val: number) => `R$ ${(val || 0).toFixed(2)}`;
 
   return (
-    <div className="pb-24 space-y-6">
-      <div className="flex bg-slate-200 p-1.5 rounded-[28px] shadow-inner">
-        <button onClick={() => setActiveTab('sales')} className={`flex-1 py-4 rounded-[22px] text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'sales' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-500'}`}>Vendas</button>
-        <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-4 rounded-[22px] text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'expenses' ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-500'}`}>Despesas</button>
+    <div className="space-y-4">
+      <div className="flex border-2 border-vault-amber p-0.5">
+        <button onClick={() => setActiveTab('sales')} className={`flex-1 py-2 text-[10px] font-black uppercase transition-all ${activeTab === 'sales' ? 'bg-vault-amber text-black' : 'text-vault-amber opacity-40'}`}>VENDAS</button>
+        <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-[10px] font-black uppercase transition-all ${activeTab === 'expenses' ? 'bg-vault-amber text-black' : 'text-vault-amber opacity-40'}`}>GASTOS</button>
       </div>
 
       {activeTab === 'sales' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center px-2">
-             <h3 className="text-slate-900 font-black text-xl uppercase tracking-tighter">Histórico de Vendas</h3>
-             <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-full uppercase tracking-widest">{sales.length} Entradas</span>
-          </div>
-
-          <div className="space-y-3">
-            {sales.map((sale, idx) => (
-              <div key={sale.id || idx} className="jewelry-card p-6 bg-white relative overflow-hidden group hover:border-amethyst-200 transition-colors">
-                <div className="absolute top-0 left-0 w-1 h-full jewel-gradient-amethyst opacity-40"></div>
-                <div className="flex justify-between items-start">
-                   <div className="space-y-1">
-                      <div className="text-slate-900 font-black text-lg tracking-tight leading-none">{sale.item}</div>
-                      <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{sale.data} • {sale.material}</div>
-                   </div>
-                   <div className="text-right">
-                      <div className="text-slate-900 font-black text-2xl tracking-tighter">{fmtMoney(sale.venda)}</div>
-                      <div className="text-emerald-500 text-[10px] font-black uppercase tracking-widest">Lucro: {fmtMoney(sale.lucro)}</div>
-                   </div>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-slate-50 flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onDeleteSale(sale.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                </div>
+        <div className="space-y-2">
+          {sales.slice().reverse().map((sale, idx) => (
+            <div key={sale.id || idx} className="jewelry-card p-3 relative bg-black/40 border-l-4 border-l-vault-amber">
+              <div className="flex justify-between items-center pr-6">
+                 <div>
+                    <div className="text-vault-amber font-black text-xs uppercase leading-none glow-text">{sale.item}</div>
+                    <div className="text-vault-amber/40 text-[7px] mt-1">{sale.data} â€¢ {sale.material}</div>
+                 </div>
+                 <div className="text-right">
+                    <div className="text-vault-amber font-black text-sm leading-none">{fmtMoney(sale.venda)}</div>
+                    <div className="text-vault-green text-[7px] font-black uppercase">L: {fmtMoney(sale.lucro)}</div>
+                 </div>
               </div>
-            ))}
-          </div>
+              <button onClick={() => onDeleteSale(sale.id)} className="absolute top-1 right-1 text-vault-low opacity-20 hover:opacity-100 p-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
       {activeTab === 'expenses' && (
-        <div className="space-y-6">
-          <div className="jewelry-card overflow-hidden bg-rose-500 border-0 shadow-xl shadow-rose-200">
-             <div className="p-8 flex flex-col items-center justify-center text-center text-white">
-                <span className="text-white/70 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Total de Saídas</span>
-                <span className="text-5xl font-black tracking-tighter">{fmtMoney(totalExpenses)}</span>
-             </div>
-          </div>
-
-          <div className="jewelry-card p-6 border-slate-200">
-             <h3 className="text-slate-900 font-black text-sm uppercase tracking-widest mb-6">Registrar Novo Gasto</h3>
-             <div className="space-y-4">
-                <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-2">Descrição</label>
-                  <input className="w-full bg-transparent border-none p-0 text-slate-900 font-bold focus:ring-0 focus:outline-none" placeholder="Ex: Conta de Luz Jan" value={newExpDesc} onChange={e => setNewExpDesc(e.target.value)} />
-                </div>
-                <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest block mb-2">Valor (R$)</label>
-                  <input className="w-full bg-transparent border-none p-0 text-slate-900 font-bold focus:ring-0 focus:outline-none" placeholder="0.00" type="number" value={newExpVal} onChange={e => setNewExpVal(e.target.value)} />
-                </div>
+        <div className="space-y-4">
+          <div className="jewelry-card p-3 bg-vault-low/5 border-vault-low/20">
+             <h3 className="text-vault-amber font-black text-[8px] uppercase mb-2">NOVO DÃ‰BITO</h3>
+             <div className="flex gap-2">
+                <input className="flex-1 text-[10px] !p-1.5" placeholder="DESCRIÃ‡ÃƒO" value={newExpDesc} onChange={e => setNewExpDesc(e.target.value)} />
+                <input className="w-16 text-[10px] !p-1.5" placeholder="R$" type="number" value={newExpVal} onChange={e => setNewExpVal(e.target.value)} />
                 <button onClick={() => {
                   if(!newExpDesc || !newExpVal) return;
                   onAddExpense(newExpDesc, Number(newExpVal), new Date().toISOString().split('T')[0]);
                   setNewExpDesc(''); setNewExpVal('');
-                }} className="w-full bg-rose-500 text-white font-black uppercase py-5 rounded-[24px] text-xs tracking-widest shadow-lg shadow-rose-100 active:scale-95 transition-all">Registrar Gasto</button>
+                }} className="bg-vault-low text-black font-black uppercase p-1.5 text-[8px]">ADD</button>
              </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {expenses.slice().reverse().map((exp, idx) => (
-               <div key={exp.id || idx} className="jewelry-card p-5 bg-white flex justify-between items-center group relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-rose-500 opacity-20"></div>
-                  <div>
-                     <div className="text-slate-900 font-black text-base leading-none mb-1">{exp.descricao}</div>
-                     <div className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">{exp.data}</div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                     <div className="text-rose-500 font-black text-xl tracking-tighter">- {fmtMoney(exp.valor)}</div>
-                     <button onClick={() => onDeleteExpense(exp.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                     </button>
-                  </div>
+               <div key={exp.id || idx} className="jewelry-card p-2 flex justify-between items-center border-l-4 border-l-vault-low">
+                  {editingExp === exp.id ? (
+                    <div className="flex gap-2 w-full items-center">
+                      <input className="flex-1 text-[9px] !p-1" value={exp.descricao} onChange={e => onUpdateExpense(exp.id, e.target.value, exp.valor)} />
+                      <input className="w-12 text-[9px] !p-1" type="number" value={exp.valor} onChange={e => onUpdateExpense(exp.id, exp.descricao, Number(e.target.value))} />
+                      <button onClick={()=>setEditingExp(null)} className="text-vault-green text-[8px] font-bold">OK</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div onClick={()=>setEditingExp(exp.id)} className="flex-1 cursor-pointer">
+                        <div className="text-vault-amber font-black text-[10px] uppercase leading-none">{exp.descricao}</div>
+                        <div className="text-vault-amber/40 text-[7px] mt-0.5">{exp.data}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                         <div className="text-vault-low font-black text-xs">-{fmtMoney(exp.valor)}</div>
+                         <button onClick={() => onDeleteExpense(exp.id)} className="text-vault-low opacity-20 hover:opacity-100">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                         </button>
+                      </div>
+                    </>
+                  )}
                </div>
             ))}
           </div>
