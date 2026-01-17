@@ -5,12 +5,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#1a1a1a" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/bra83/333gestao/main/logomarca.png">
     <link rel="manifest" href="manifest.json" />
-    <title>Savepoint Quest</title>
+    <title>Savepoint Quest - Vault OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       window.APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUoGaStu2m-ytdBq8gp2kanUpmt9rd_WB3Dedi19Cu0NBbZLAD4nsYVDecCzwTOv31YA/exec"; 
@@ -19,62 +19,101 @@
         theme: {
           extend: {
             colors: {
-              amethyst: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87' },
-              sapphire: { 50: '#f0f7ff', 100: '#e0effe', 200: '#bae0fd', 300: '#7cc7fb', 400: '#38a9f8', 500: '#0e8ce9', 600: '#026fc7', 700: '#0358a1', 800: '#074b85', 900: '#0c3f6e' },
+              vault: {
+                bg: '#1a1a1a',
+                panel: '#242424',
+                amber: '#ffb642',
+                green: '#00ff41',
+                border: '#4a4a4a',
+                low: '#ff3131'
+              },
             }
           }
         }
       }
     </script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-      body { 
-        font-family: 'Inter', sans-serif; 
-        -webkit-tap-highlight-color: transparent; 
-        background-color: #f1f5f9;
-        margin: 0;
-      }
-      #root { min-height: 100vh; background-color: #f1f5f9; }
+      @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
       
+      body { 
+        font-family: 'Share Tech Mono', monospace; 
+        background-color: #1a1a1a;
+        color: #ffb642;
+        margin: 0;
+        overflow-x: hidden;
+      }
+
+      /* Scanline Effect Overlay */
+      body::before {
+        content: " ";
+        display: block;
+        position: fixed;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), 
+                    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+        z-index: 9999;
+        background-size: 100% 3px, 3px 100%;
+        pointer-events: none;
+      }
+
       .jewelry-card { 
-        background: white; 
-        border-radius: 24px; 
-        border: 1px solid #e2e8f0; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        background: #242424; 
+        border: 2px solid #ffb642; 
+        box-shadow: inset 0 0 10px rgba(255, 182, 66, 0.1), 0 0 5px rgba(255, 182, 66, 0.1);
+        border-radius: 4px;
       }
 
       input, select, textarea {
-        background-color: #f8fafc !important;
-        border: 2px solid #e2e8f0 !important;
-        transition: all 0.2s ease-in-out;
+        background-color: #111 !important;
+        border: 1px solid #ffb642 !important;
+        color: #ffb642 !important;
+        border-radius: 2px !important;
+        padding: 0.75rem !important;
       }
+      
       input:focus, select:focus {
-        border-color: #a855f7 !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1) !important;
         outline: none;
+        box-shadow: 0 0 10px rgba(255, 182, 66, 0.5);
       }
 
-      .jewel-gradient-amethyst { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); }
-      .jewel-gradient-sapphire { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-      .jewel-gradient-emerald { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+      .jewel-gradient-amethyst { background: #ffb642; color: #000; }
+      .jewel-gradient-emerald { background: #00ff41; color: #000; }
       
-      .nav-active {
-        background: #f1f5f9;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+      .glow-text {
+        text-shadow: 0 0 8px rgba(255, 182, 66, 0.7);
       }
+
+      /* Navigation styling */
+      .nav-item-active {
+        background: rgba(255, 182, 66, 0.1);
+        border-top: 4px solid #ffb642;
+      }
+
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #111; }
+      ::-webkit-scrollbar-thumb { background: #ffb642; }
+
+      @keyframes flicker {
+        0% { opacity: 0.97; }
+        5% { opacity: 0.95; }
+        10% { opacity: 0.9; }
+        15% { opacity: 0.95; }
+        50% { opacity: 0.98; }
+        100% { opacity: 1; }
+      }
+      #root { animation: flicker 0.15s infinite; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
     "path": "https://esm.sh/path@^0.12.7",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
     "url": "https://esm.sh/url@^0.11.4"
   }
 }
@@ -86,9 +125,7 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW Registered'))
-            .catch(err => console.log('SW Registration failed', err));
+          navigator.serviceWorker.register('./sw.js');
         });
       }
     </script>
