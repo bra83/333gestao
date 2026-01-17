@@ -23,15 +23,13 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
   const [failRate, setFailRate] = useState<number>(settings.risco || 10);
   
   const [costs, setCosts] = useState({
-    materialTotal: 0, energyTotal: 0, machineTotal: 0, laborTotal: 0, fixedTotal: 0, servicesTotal: 0, subtotal: 0, riskValue: 0, totalCost: 0, finalPrice: 0, profit: 0, totalWeight: 0
+    materialTotal: 0, energyTotal: 0, machineTotal: 0, laborTotal: 0, fixedTotal: 0, servicesTotal: 0, totalCost: 0, finalPrice: 0, profit: 0, totalWeight: 0
   });
 
   useEffect(() => {
     if (stock.length === 0) return;
-
     let totalMaterialCost = 0;
     let totalWeight = 0;
-
     selectedFilaments.forEach(sel => {
       const filament = stock[sel.stockIdx];
       if (filament && sel.weight > 0) {
@@ -43,26 +41,11 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     });
 
     const safeKwh = settings.kwh || 0.95;
-    const safeVidaUtil = (settings.vidaUtilHoras && settings.vidaUtilHoras > 0) ? settings.vidaUtilHoras : 8000;
-    const safeHorasTrab = (settings.horasTrab && settings.horasTrab > 0) ? settings.horasTrab : 160;
-    const safeEficiencia = (settings.eficienciaFonte && settings.eficienciaFonte > 0) ? settings.eficienciaFonte : 0.9;
-    const safePrecoMaq = settings.precoMaq || 3500;
-    const safeValorHora = settings.valorHoraTrabalho || 20;
-
     const powerKW = (settings.potencia / 1000);
-    const energyConsumption = (powerKW * hours) / safeEficiencia;
-    const energyTotal = energyConsumption * safeKwh;
-
-    const depreciationPerHour = safePrecoMaq / safeVidaUtil;
-    const maintenancePerHour = (settings.manutencaoMensal || 20) / safeHorasTrab;
-    const machineTotal = (depreciationPerHour + maintenancePerHour) * hours;
-
-    const totalLaborMinutes = prepTime + postTime + (settings.tempoAtendimento || 10); 
-    const laborTotal = (totalLaborMinutes / 60) * safeValorHora;
-
-    const totalMonthlyFixed = (settings.aluguel || 0) + (settings.mei || 0) + (settings.softwares || 0) + (settings.ecommerce || 0) + (settings.publicidade || 0) + (settings.condominio || 0);
-    const fixedCostPerHour = totalMonthlyFixed / safeHorasTrab;
-    const fixedTotal = fixedCostPerHour * hours;
+    const energyTotal = (powerKW * hours * safeKwh) / (settings.eficienciaFonte || 0.9);
+    const machineTotal = ((settings.precoMaq / (settings.vidaUtilHoras || 8000)) + ((settings.manutencaoMensal || 20) / (settings.horasTrab || 160))) * hours;
+    const laborTotal = ((prepTime + postTime + (settings.tempoAtendimento || 10)) / 60) * (settings.valorHoraTrabalho || 20);
+    const fixedTotal = (((settings.aluguel || 0) + (settings.mei || 0) + (settings.softwares || 0)) / (settings.horasTrab || 160)) * hours;
 
     let paintCost = 0;
     if (paintingType === 'simple') paintCost = settings.pintSimples;
@@ -71,156 +54,104 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
     const servicesTotal = (settings.embalagem || 0) + paintCost;
 
     const subtotal = totalMaterialCost + energyTotal + machineTotal + laborTotal + fixedTotal + servicesTotal;
-    const riskPct = failRate / 100;
-    const riskValue = subtotal * riskPct;
-    const totalCost = subtotal + riskValue;
+    const totalCost = subtotal * (1 + (failRate / 100));
     const finalPrice = totalCost * (settings.markup || 3);
     const profit = finalPrice - totalCost;
 
     const safeNum = (n: number) => (isFinite(n) && !isNaN(n)) ? n : 0;
     setCosts({
       materialTotal: safeNum(totalMaterialCost), energyTotal: safeNum(energyTotal), machineTotal: safeNum(machineTotal),
+      // Fix: Use correct variable name 'fixedTotal' instead of 'fixedNum'
       laborTotal: safeNum(laborTotal), fixedTotal: safeNum(fixedTotal), servicesTotal: safeNum(servicesTotal),
-      subtotal: safeNum(subtotal), riskValue: safeNum(riskValue), totalCost: safeNum(totalCost),
-      finalPrice: safeNum(finalPrice), profit: safeNum(profit), totalWeight: safeNum(totalWeight)
+      totalCost: safeNum(totalCost), finalPrice: safeNum(finalPrice), profit: safeNum(profit), totalWeight: safeNum(totalWeight)
     });
   }, [selectedFilaments, hours, paintingType, settings, stock, prepTime, postTime, failRate]);
 
-  const addFilamentSlot = () => {
-    if (selectedFilaments.length < 8) {
-      setSelectedFilaments([...selectedFilaments, { stockIdx: 0, weight: 0 }]);
-    }
-  };
-
-  const removeFilamentSlot = (index: number) => {
-    if (selectedFilaments.length > 1) {
-      setSelectedFilaments(selectedFilaments.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateFilament = (index: number, updates: Partial<SelectedFilament>) => {
-    setSelectedFilaments(selectedFilaments.map((f, i) => i === index ? { ...f, ...updates } : f));
-  };
-
   const handleSave = () => {
-    if (!itemName) return alert('Nome do Projeto obrigatório!');
-    if (costs.totalWeight <= 0) return alert('Adicione peso aos filamentos!');
-
-    const materialsData = selectedFilaments
-      .filter(f => f.weight > 0)
-      .map(f => {
-        const s = stock[f.stockIdx];
-        return {
-          name: s.marca ? `${s.nome} (${s.marca})` : s.nome,
-          weight: f.weight,
-          stockId: s.id!
-        };
-      });
-
-    onSaveSale(itemName, materialsData, costs.finalPrice, costs.profit);
-    setItemName(''); 
-    setSelectedFilaments([{ stockIdx: 0, weight: 0 }]); 
-    setHours(0);
+    if (!itemName) return alert('NOME REQUERIDO!');
+    const mats = selectedFilaments.filter(f => f.weight > 0).map(f => ({ name: stock[f.stockIdx].nome, weight: f.weight, stockId: stock[f.stockIdx].id! }));
+    onSaveSale(itemName, mats, costs.finalPrice, costs.profit);
+    setItemName(''); setSelectedFilaments([{ stockIdx: 0, weight: 0 }]); setHours(0);
   };
 
-  if (stock.length === 0) return <div className="jewelry-card p-12 text-center font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border-dashed border-2">Sem filamentos no cofre!</div>;
+  if (stock.length === 0) return <div className="jewelry-card p-12 text-center font-black text-vault-amber uppercase bg-black/40 border-dashed">COFRE VAZIO</div>;
 
   return (
-    <div className="space-y-6 pb-20">
-      <div className="jewelry-card p-6 shadow-sm border-slate-200">
-        <h2 className="text-slate-900 font-black text-xl uppercase mb-6 tracking-tighter border-b-2 border-slate-100 pb-3 flex items-center gap-2">
-          <span className="w-2 h-6 jewel-gradient-amethyst rounded-full"></span>
-          Mesa de Criação
+    <div className="space-y-6">
+      <div className="jewelry-card p-6">
+        <h2 className="text-vault-amber font-black text-lg uppercase mb-6 glow-text flex items-center gap-2 border-b border-vault-amber/30 pb-2">
+          MESA DE CRIAÃ‡ÃƒO
         </h2>
         
-        <div className="space-y-6">
-          <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
-            <label className="block text-[11px] font-black uppercase text-slate-500 mb-2 ml-1 tracking-widest">Nome do Projeto</label>
-            <input type="text" className="w-full p-4 rounded-2xl text-slate-900 font-bold placeholder:text-slate-300" value={itemName} onChange={e => setItemName(e.target.value)} placeholder="Ex: Pingente Ouro 3D" />
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] font-black uppercase text-vault-amber/60 mb-1 block">Nome do Projeto</label>
+            <input type="text" className="w-full" value={itemName} onChange={e => setItemName(e.target.value)} placeholder="PROTOCOL_NAME" />
           </div>
 
-          <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
-            <div className="flex justify-between items-center mb-3 px-1">
-              <label className="text-[11px] font-black uppercase text-slate-500 tracking-widest">Materiais e Cores</label>
-              <button onClick={addFilamentSlot} disabled={selectedFilaments.length >= 8} className="text-[11px] font-black uppercase text-amethyst-600 bg-amethyst-50 px-3 py-1 rounded-full hover:bg-amethyst-100 transition-colors disabled:opacity-30">
-                + Nova Cor
+          <div className="jewelry-card p-4 bg-black/20">
+            <div className="flex justify-between items-center mb-4">
+              <label className="text-[10px] font-black uppercase text-vault-amber/60">Materiais</label>
+              <button onClick={() => setSelectedFilaments([...selectedFilaments, { stockIdx: 0, weight: 0 }])} className="text-[10px] border border-vault-amber px-2 py-1 uppercase font-bold active:bg-vault-amber pulse-glow">
+                + Adicionar
               </button>
             </div>
-            
-            <div className="space-y-3">
-              {selectedFilaments.map((sel, idx) => (
-                <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded-2xl border border-slate-100 shadow-sm animate-in slide-in-from-left-2 duration-200">
-                  <div className="flex-[3]">
-                    <select className="w-full p-3 rounded-xl text-xs font-bold text-slate-900 border-none bg-transparent" value={sel.stockIdx} onChange={e => updateFilament(idx, { stockIdx: Number(e.target.value) })}>
-                      {stock.map((item, sIdx) => (<option key={sIdx} value={sIdx}>{item.nome} ({item.tipo})</option>))}
-                    </select>
-                  </div>
-                  <div className="flex-[2]">
-                    <input type="number" placeholder="Peso (g)" className="w-full p-3 rounded-xl text-xs font-bold text-slate-900 border-none bg-transparent" value={sel.weight || ''} onChange={e => updateFilament(idx, { weight: Number(e.target.value) })} />
-                  </div>
-                  {selectedFilaments.length > 1 && (
-                    <button onClick={() => removeFilamentSlot(idx)} className="w-10 h-10 flex items-center justify-center rounded-xl text-rose-500 hover:bg-rose-50 transition-colors">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            {selectedFilaments.map((sel, idx) => (
+              <div key={idx} className="flex gap-2 mb-2">
+                <select className="flex-1 text-xs" value={sel.stockIdx} onChange={e => {
+                  const newF = [...selectedFilaments];
+                  newF[idx].stockIdx = Number(e.target.value);
+                  setSelectedFilaments(newF);
+                }}>
+                  {stock.map((item, sIdx) => (<option key={sIdx} value={sIdx}>{item.nome}</option>))}
+                </select>
+                <input type="number" className="w-24 text-xs" placeholder="G" value={sel.weight || ''} onChange={e => {
+                  const newF = [...selectedFilaments];
+                  newF[idx].weight = Number(e.target.value);
+                  setSelectedFilaments(newF);
+                }} />
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
-              <label className="block text-[11px] font-black uppercase text-slate-500 mb-2 ml-1 tracking-widest">Tempo (Horas)</label>
-              <input type="number" className="w-full p-4 rounded-2xl text-slate-900 font-bold" value={hours || ''} onChange={e => setHours(Number(e.target.value))} placeholder="0.0" />
+            <div>
+              <label className="text-[10px] font-black uppercase text-vault-amber/60 mb-1 block">Tempo (Horas)</label>
+              <input type="number" className="w-full" value={hours || ''} onChange={e => setHours(Number(e.target.value))} />
             </div>
-            <div className="bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
-              <label className="block text-[11px] font-black uppercase text-slate-500 mb-2 ml-1 tracking-widest">Acabamento</label>
-              <select className="w-full p-4 rounded-2xl text-xs font-bold text-slate-900" value={paintingType} onChange={e => setPaintingType(e.target.value as any)}>
-                <option value="none">Nenhum</option>
-                <option value="simple">Simples</option>
-                <option value="medium">Médio</option>
-                <option value="pro">Profissional</option>
+            <div>
+              <label className="text-[10px] font-black uppercase text-vault-amber/60 mb-1 block">Pintura</label>
+              <select className="w-full" value={paintingType} onChange={e => setPaintingType(e.target.value as any)}>
+                <option value="none">OFF</option>
+                <option value="simple">LEVEL 1</option>
+                <option value="medium">LEVEL 2</option>
+                <option value="pro">LEVEL 3</option>
               </select>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="jewelry-card overflow-hidden bg-slate-900 border-0 shadow-2xl">
-        <div className="jewel-gradient-amethyst p-5 text-center">
-            <h3 className="text-white font-black uppercase tracking-[0.4em] text-[10px]">Relatório de Custos</h3>
-        </div>
-        
-        <div className="p-8 space-y-4 text-sm font-semibold text-slate-400">
-          <Row label="Gemas (Materiais)" value={costs.materialTotal} sub={`${costs.totalWeight}g totais`} />
-          <Row label="Corrente Elétrica" value={costs.energyTotal} />
-          <Row label="Desgaste Máquina" value={costs.machineTotal} />
-          <Row label="Mão de Obra" value={costs.laborTotal} />
-          <Row label="Custos de Guilda" value={costs.fixedTotal} />
-          
-          <div className="border-t border-white/10 my-6 pt-4">
-            <div className="flex justify-between text-lg text-white font-black tracking-tighter">
-              <span className="uppercase text-xs tracking-widest text-slate-500 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amethyst-500 animate-pulse"></span>
-                Custo de Produção
-              </span>
+      <div className="jewelry-card bg-black shadow-2xl border-4 border-double">
+        <div className="p-6 space-y-3">
+          <Row label="Holotapes (Material)" value={costs.materialTotal} />
+          <Row label="FusÃ£o EnergÃ©tica" value={costs.energyTotal} />
+          <Row label="Desgaste Vault" value={costs.machineTotal} />
+          <div className="border-t border-vault-amber/30 pt-3">
+            <div className="flex justify-between font-black text-xl glow-text">
+              <span className="uppercase text-xs self-center">Custo de ProduÃ§Ã£o</span>
               <span>R$ {costs.totalCost.toFixed(2)}</span>
             </div>
           </div>
         </div>
         
-        <div className="bg-white/5 p-8 text-center border-t border-white/10 backdrop-blur-sm">
-            <span className="block text-[10px] text-amethyst-400 uppercase tracking-[0.2em] font-black mb-2">Preço de Venda Sugerido</span>
-            <div className="text-6xl font-black text-white mb-3 tracking-tighter">
-              <span className="text-2xl align-top mr-1 text-amethyst-500">R$</span>
-              {costs.finalPrice.toFixed(2)}
+        <div className="p-6 bg-vault-amber/5 border-t border-vault-amber/30 text-center">
+            <span className="text-[10px] opacity-60 font-black uppercase block mb-1">CotaÃ§Ã£o Final</span>
+            <div className="text-5xl font-black glow-text mb-4">
+              R$ {costs.finalPrice.toFixed(2)}
             </div>
-            <div className="bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest py-2 px-4 rounded-full inline-block">
-              Lucro Estimado: +R$ {costs.profit.toFixed(2)}
-            </div>
-
-            <button onClick={handleSave} className="w-full mt-8 jewel-gradient-emerald text-white font-black uppercase py-5 rounded-[28px] text-xs tracking-[0.3em] shadow-[0_20px_40px_-15px_rgba(16,185,129,0.5)] active:scale-95 transition-all">
-              FINALIZAR PROJETO
+            <button onClick={handleSave} className="w-full bg-vault-amber text-black font-black uppercase py-4 text-sm tracking-widest active:scale-95 transition-all shadow-[0_0_20px_rgba(255,182,66,0.3)]">
+              PROCESSAR FABRICAÃ‡ÃƒO
             </button>
         </div>
       </div>
@@ -228,12 +159,9 @@ export const Calculator: React.FC<CalculatorProps> = ({ settings, stock, onSaveS
   );
 };
 
-const Row = ({ label, value, sub }: { label: string, value: number, sub?: string }) => (
-  <div className="flex justify-between items-center border-b border-white/5 pb-3 last:border-0">
-    <div className="flex flex-col">
-      <span className="uppercase text-[10px] tracking-widest text-slate-500">{label}</span>
-      {sub && <span className="text-[9px] text-amethyst-400/60 font-bold">{sub}</span>}
-    </div>
-    <span className="text-slate-100 font-mono">R$ {value.toFixed(2)}</span>
+const Row = ({ label, value }: { label: string, value: number }) => (
+  <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest border-b border-vault-amber/10 pb-1">
+    <span className="opacity-60">{label}</span>
+    <span>R$ {value.toFixed(2)}</span>
   </div>
-); 
+);
